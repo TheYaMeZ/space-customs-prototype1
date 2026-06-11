@@ -123,16 +123,32 @@
       "Captain disputes the queue estimate but acknowledges inspection authority.",
       "Background comms indicate routine watch turnover."
     ],
-    origins: ["Morrow Anchorage", "Kite Reach", "Stonewake", "Nacre Port", "Tern Belt", "Hollow Step"],
-    destinations: ["Gate Four", "Lattice Haven", "Duskmarch", "Cinder Relay", "Outer Polder", "Sable Exchange"],
-    companies: ["Morrow Haulage", "Blue Banner Transit", "Kite Span Logistics", "Greywake Trade", "Ternline Civil"],
-    contractors: ["J4 Registry Works", "Morrow Certified Service", "Cinder Vale Dockworks", "Lattice Technical Bureau"],
+    origins: [
+      "Morrow Anchorage", "Kite Reach", "Stonewake", "Nacre Port", "Tern Belt", "Hollow Step",
+      "Capella Anchorage", "Deneb Shipyards", "Vega Transfer", "Altair Commercial Ring"
+    ],
+    destinations: [
+      "Gate Four", "Lattice Haven", "Duskmarch", "Cinder Relay", "Outer Polder", "Sable Exchange",
+      "Gamma Draconis Relay", "Epsilon Pegasi Station", "Polaris Junction", "Sirius Exchange"
+    ],
+    companies: [
+      "Morrow Haulage", "Blue Banner Transit", "Kite Span Logistics", "Greywake Trade", "Ternline Civil",
+      "Capella Freight Union", "Deneb Transit Combine", "Vega Colonial Supply", "Pegasi Heavy Lift"
+    ],
+    contractors: [
+      "J4 Registry Works", "Morrow Certified Service", "Cinder Vale Dockworks", "Lattice Technical Bureau",
+      "Subach-Innes Yard Services", "Akheton Systems Group", "Triton Dynamics Field Office",
+      "Gamma Draconis Dock Authority"
+    ],
     manufacturers: [
       { name: "Aegis Systems", models: ["PD-8", "NAV-40", "SG-2"] },
       { name: "Cinder Vale", models: ["CVR-11", "MULE-6", "RAD-9"] },
       { name: "Morrow Foundry", models: ["MF-20", "GRD-3", "BUS-18"] },
       { name: "Pale Vector", models: ["PV-7", "SCOPE-2", "LATCH-5"] },
-      { name: "Lattice Works", models: ["LW-14", "FRAME-8", "COIL-3"] }
+      { name: "Lattice Works", models: ["LW-14", "FRAME-8", "COIL-3"] },
+      { name: "Subach-Innes", models: ["SI-22", "PROM-7", "VCTR-4"] },
+      { name: "Akheton Corporation", models: ["AKH-19", "KPR-6", "LANCE-12"] },
+      { name: "Triton Dynamics", models: ["TD-40", "ORION-8", "MANTA-3"] }
     ],
     bannedManufacturer: { name: "Helix Forge", models: ["HX-44", "HF-P9", "LANCE-2"] },
     moduleTypes: [
