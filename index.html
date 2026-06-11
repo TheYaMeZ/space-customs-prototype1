@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Space Customs Prototype 1</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="screen-frame">
+    <header class="topbar">
+      <div class="system-title">
+        <span class="machine-mark">J4-CAS / 77B</span>
+        <div>
+          <p class="eyebrow">Jumpgate Four Customs Authority</p>
+          <h1>Vessel Inspection Workstation</h1>
+        </div>
+      </div>
+      <div class="status-strip">
+        <div class="status-card"><span>Shift</span><strong id="shift-timer">600s</strong></div>
+        <div class="status-card"><span>Credit</span><strong id="score">0</strong></div>
+        <div class="status-card"><span>Miss</span><strong id="mistakes">0</strong></div>
+        <div class="status-card"><span>Focus</span><strong id="assists-left">3</strong></div>
+        <div class="status-card power-card">
+          <span>Power</span>
+          <strong id="scan-budget">8/8</strong>
+          <small id="power-recharge">FULL</small>
+        </div>
+      </div>
+    </header>
+
+    <main id="workspace" class="workspace">
+      <aside id="rules-panel" class="panel side-panel rules-panel">
+        <div class="panel-header">
+          <div><span class="panel-code">REF</span><h2>Regulations</h2></div>
+          <button class="panel-toggle" data-panel="rules" aria-label="Collapse regulations">[&lt;]</button>
+        </div>
+        <div class="panel-body">
+          <div id="rules-list" class="rule-list"></div>
+        </div>
+      </aside>
+
+      <section class="panel dossier-panel">
+        <div class="panel-header">
+          <div><span class="panel-code">DOS</span><h2>Contact Dossier</h2></div>
+          <span id="traffic-load" class="panel-indicator">0 CONTACTS</span>
+        </div>
+
+        <nav id="traffic-list" class="contact-tabs"></nav>
+
+        <div class="dossier-heading">
+          <div>
+            <span class="field-label">FOCUSED CONTACT</span>
+            <h3 id="ship-name">NO CONTACT SELECTED</h3>
+          </div>
+          <strong id="ship-departure" class="departure-clock">STANDBY</strong>
+        </div>
+
+        <p id="ship-summary" class="ship-summary">Select a contact to load its declaration packet.</p>
+
+        <div id="ship-data-board" class="form-sheet">
+          <p class="empty-state">NO DOSSIER DATA</p>
+        </div>
+
+        <section class="ops-log">
+          <div class="ops-log-header">
+            <div><span class="panel-code">LOG</span><h3>Ops Log</h3></div>
+            <span id="log-count">0 ENTRIES</span>
+          </div>
+          <div id="log-list" class="log-list"></div>
+        </section>
+      </section>
+
+      <aside id="systems-panel" class="panel side-panel systems-panel">
+        <div class="panel-header">
+          <div><span class="panel-code">SYS</span><h2>Active Systems</h2></div>
+          <button class="panel-toggle" data-panel="systems" aria-label="Collapse active systems">[&gt;]</button>
+        </div>
+        <div class="panel-body">
+          <div id="action-grid" class="action-grid"></div>
+
+          <div class="subhead">
+            <h3>Scan Records</h3>
+            <span id="selected-evidence-text">NONE SELECTED</span>
+          </div>
+          <div id="evidence-list" class="report-tabs"></div>
+
+          <div class="readout-toolbar">
+            <button id="assist-button" class="utility-button">FOCUS ASSIST</button>
+          </div>
+          <div id="focus-strip" class="focus-strip hidden"></div>
+          <div id="report-readout" class="report-readout">
+            <p class="empty-state">SELECT A COMPLETED RECORD</p>
+          </div>
+
+          <div class="selection-line">
+            <span>ALLEGED</span>
+            <div id="allegation-list" class="allegation-list"></div>
+          </div>
+          <div class="judgement-row">
+            <button id="clear-ship" class="clear-button">CLEAR</button>
+            <button id="detain-ship" class="detain-button">DETAIN</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div id="overlay" class="overlay hidden">
+    <div class="overlay-card">
+      <p id="overlay-eyebrow" class="eyebrow">SHIFT REPORT</p>
+      <h2 id="overlay-title">INSPECTION COMPLETE</h2>
+      <p id="overlay-summary"></p>
+      <ul id="overlay-rules" class="overlay-rules"></ul>
+      <button id="overlay-action" class="clear-button">BEGIN SHIFT</button>
+      <button id="overlay-restart" class="clear-button hidden">RUN ANOTHER SHIFT</button>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="config.js"></script>
+  <script src="ship-generator.js"></script>
+  <script src="game-engine.js"></script>
+  <script src="ui.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
