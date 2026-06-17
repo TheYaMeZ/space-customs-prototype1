@@ -4,6 +4,8 @@
 
 This uplift expands ship generation, backing data, and regulation variety while preserving the core customs-inspection loop: read records, form suspicions, spend scanner power when needed, and make reversible allegations from evidence.
 
+V1 implementation status: the first buildable pass is implemented in the prototype. The document remains useful as the design roadmap for future expansion.
+
 The main design shift is that not every violation should require an active scan. Roughly half of active regulations should be provable by manually comparing already-visible dossier and passive data. Scanners remain important for physical verification, hidden modules, cargo mass, reactor output, hull interrogation, and disputed paperwork.
 
 The goal is not to make dossiers longer for atmosphere alone. Every new field should help the player:
@@ -569,7 +571,7 @@ Convert earlier only if the implementation becomes dominated by shape errors and
 
 ## Assumptions
 
-- This document is planning-only; implementation happens in later code changes.
+- This document began as a plan; the V1 implementation slice is now present in the prototype, while later roadmap ideas remain future work.
 - About half of active rules should be solvable from visible records alone.
 - Paperwork/manual violations are markable immediately once a ship is selected.
 - Scanners remain part of the core loop, but not every regulation requires one.

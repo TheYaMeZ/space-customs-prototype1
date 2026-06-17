@@ -24,9 +24,9 @@ Later scripts depend on interfaces created by earlier scripts.
 Static content and domain definitions:
 
 - Regulations and their confirming scanners.
-- Ship classes and cargo pools.
-- Names, locations, operators, contractors, and manufacturers.
-- Banned and military-specific domain values.
+- Ship classes, cargo pools, route/location data, registry authorities, and operator licences.
+- Name pools, contractors, manufacturers, module families, and recall policies.
+- Restricted and military-specific domain values.
 
 Add flavour here when it does not affect balance or timing.
 
@@ -39,6 +39,7 @@ Balancing and system configuration:
 - Power and Focus Assist limits.
 - Anomaly thresholds.
 - Per-class passive baselines and rule risk weights.
+- Active regulation evidence mix.
 - Shared randomisation utilities under `SpaceCustoms.utils`.
 
 Values that change difficulty or probability belong here rather than in rendering code.
@@ -48,9 +49,10 @@ Values that change difficulty or probability belong here rather than in renderin
 Procedural vessel construction:
 
 - Selects class-biased active-rule violations.
+- Selects active regulations with a dossier/scan evidence mix.
 - Adds benign irregularities to some legal ships.
-- Builds passive surveys, dossiers, modules, and scan reports.
-- Guarantees meaningful clues and confirming evidence.
+- Builds passive surveys, dossiers, modules, registry IDs, ship names, and scan reports.
+- Guarantees meaningful clues and either dossier evidence or confirming scan evidence.
 - Exposes generator validation for large-sample invariant checks.
 
 Hidden anomaly metadata is generated here but is not ordinarily rendered as a score.
@@ -100,11 +102,12 @@ Minimal bootstrap:
   code,
   title,
   criterion,
-  confirmingScan
+  confirmingScan,
+  evidenceType
 }
 ```
 
-`confirmingScan` references a scanner ID from `config.scans`.
+`confirmingScan` references a scanner ID from `config.scans` for scan-confirmed rules. Dossier-confirmed rules use `confirmingScan: null` and `evidenceType: "dossier"`; these are markable as soon as a ship is selected.
 
 ### Evidence Field
 
@@ -123,7 +126,7 @@ Minimal bootstrap:
 - `key` is stable within a ship and supports Focus Assist highlighting.
 - `ruleIds` describes relevance, not guilt.
 - `anomalyScore` is hidden implementation metadata.
-- `anomalyCategory` may be presented as a neutral cue above the configured threshold.
+- `anomalyCategory` may be presented as a neutral cue above the configured threshold for passive survey fields. Dossier categories are internal metadata and should not be rendered as badges.
 - `group` is currently used to visually separate Module Query module slots.
 
 ### Scan Report
@@ -139,7 +142,7 @@ Minimal bootstrap:
 }
 ```
 
-`violationRuleIds` is hidden truth used by generation validation and audit logic. UI availability must depend on `discovered` and the regulation's `confirmingScan`, never on `violationRuleIds`.
+`violationRuleIds` is hidden truth used by generation validation and audit logic. UI availability must depend on the regulation evidence path: dossier rules are immediately markable for selected ships, while scan rules depend on `discovered` and the regulation's `confirmingScan`. It must never depend on `violationRuleIds`.
 
 ### Generated Ship
 
@@ -157,13 +160,14 @@ Minimal bootstrap:
   allegedViolationIds,
   actualViolations,
   benignHintRuleIds,
+  ruleEvidence,
   assistActive,
   assistMessage,
   assistHighlightKeys
 }
 ```
 
-`assistHighlightKeys` is added when Focus Assist evaluates visible evidence. `actualViolations`, `benignHintRuleIds`, and anomaly scores are hidden state and must not directly drive normal UI verdicts.
+`assistHighlightKeys` is added when Focus Assist evaluates visible evidence. `actualViolations`, `benignHintRuleIds`, `ruleEvidence`, and anomaly scores are hidden state and must not directly drive normal UI verdicts.
 
 ### Engine State
 
@@ -172,6 +176,7 @@ The singleton `SpaceCustoms.engine.state` owns:
 - Current mode and shift timing.
 - Score, mistakes, and resource counters.
 - Active regulation IDs.
+- Active regulation variants.
 - Traffic and selected ship/rule/report IDs.
 - Ops Log entries and resolved-contact count.
 - Side-panel collapse state.
@@ -183,16 +188,18 @@ Ship-specific scan, allegation, and assist state remains on each generated ship.
 - `activeRuleIds` contains four distinct rules selected from `data.rules`.
 - Ships may violate only active regulations.
 - Every violation has a passive or dossier clue at or above `passiveTagThreshold`.
-- Every violation appears in the correct confirming report.
+- Every scan-confirmed violation appears in the correct confirming report.
+- Every dossier-confirmed violation has visible supporting fields in the dossier.
 - Legal ships may contain benign anomalies but no hidden active violation.
-- A regulation becomes markable when its confirming report is discovered, independent of report truth.
+- A scan-confirmed regulation becomes markable when its confirming report is discovered, independent of report truth.
+- A dossier-confirmed regulation is markable immediately once a ship is selected.
 - Detention succeeds only when alleged and actual violation sets match exactly.
 - Any unresolved departure counts as a miss and does not count as a resolved contact.
 - Focus Assist considers only evidence currently visible to the player.
 
 ## Safe Extension Points
 
-- Add flavour by extending arrays in `data.js`.
+- Add flavour by extending entity pools in `data.js`.
 - Add a regulation by defining its data, generation condition, clue, confirming report evidence, audit description, and class risk weights together.
 - Add a scanner by extending `config.scans`, report generation, UI rendering expectations, and audit mappings.
 - Add a new dossier section only when at least one mechanic asks the player to use it.
@@ -205,4 +212,3 @@ Any new rule or scanner should be accompanied by generator-validation coverage a
 Use the commands in [`../AGENTS.md`](../AGENTS.md). Generator validation is especially important after changing probabilities, evidence metadata, rules, scanners, or class profiles.
 
 Because the prototype has no automated browser suite, layout and interaction changes still require a manual browser playthrough when practical.
-

@@ -5,6 +5,7 @@
     contactLifetime: [140, 200],
     maxContacts: 4,
     activeRuleCount: 4,
+    activeRuleMix: { dossier: 2, scan: 2 },
     assistCharges: 3,
     maxScanPower: 8,
     powerRechargeInterval: 25,
@@ -18,23 +19,68 @@
     ],
     classProfiles: {
       "Light Freighter": {
-        risk: { "manifest-match": 1.8, "weapon-license": 0.8, "banned-manufacturer": 0.9, "unsafe-reactor": 0.8, "military-registry": 0.7 },
+        risk: {
+          "manifest-match": 1.8,
+          "weapon-license": 0.8,
+          "component-recall": 0.9,
+          "unsafe-reactor": 0.8,
+          "military-registry": 0.7,
+          "route-endorsement": 1.0,
+          "operator-scope": 1.2,
+          "cargo-containment": 1.1
+        },
         baseline: { massVariance: 1.4, thermalVariance: 7.5, iffDrift: 2.8, emApertures: 1 }
       },
       Courier: {
-        risk: { "military-registry": 1.7, "manifest-match": 0.8, "weapon-license": 0.8, "banned-manufacturer": 0.7, "unsafe-reactor": 0.8 },
+        risk: {
+          "military-registry": 1.7,
+          "manifest-match": 0.8,
+          "weapon-license": 0.8,
+          "component-recall": 0.7,
+          "unsafe-reactor": 0.8,
+          "route-endorsement": 1.4,
+          "operator-scope": 0.8,
+          "cargo-containment": 0.8
+        },
         baseline: { massVariance: 0.8, thermalVariance: 5.5, iffDrift: 1.8, emApertures: 0 }
       },
       "Salvage Skiff": {
-        risk: { "banned-manufacturer": 1.8, "weapon-license": 1.2, "unsafe-reactor": 1.1, "manifest-match": 0.9, "military-registry": 0.7 },
+        risk: {
+          "component-recall": 1.8,
+          "weapon-license": 1.2,
+          "unsafe-reactor": 1.1,
+          "manifest-match": 0.9,
+          "military-registry": 0.7,
+          "route-endorsement": 1.2,
+          "operator-scope": 1.6,
+          "cargo-containment": 0.8
+        },
         baseline: { massVariance: 2.0, thermalVariance: 10.5, iffDrift: 3.2, emApertures: 2 }
       },
       Prospector: {
-        risk: { "unsafe-reactor": 1.7, "banned-manufacturer": 1.4, "weapon-license": 0.9, "manifest-match": 0.8, "military-registry": 0.7 },
+        risk: {
+          "unsafe-reactor": 1.7,
+          "component-recall": 1.4,
+          "weapon-license": 0.9,
+          "manifest-match": 0.8,
+          "military-registry": 0.7,
+          "route-endorsement": 1.3,
+          "operator-scope": 1.1,
+          "cargo-containment": 1.5
+        },
         baseline: { massVariance: 1.7, thermalVariance: 12.0, iffDrift: 2.6, emApertures: 2 }
       },
       "Colony Shuttle": {
-        risk: { "manifest-match": 1.35, "weapon-license": 1.35, "military-registry": 0.8, "banned-manufacturer": 0.8, "unsafe-reactor": 0.8 },
+        risk: {
+          "manifest-match": 1.35,
+          "weapon-license": 1.35,
+          "military-registry": 0.8,
+          "component-recall": 0.8,
+          "unsafe-reactor": 0.8,
+          "route-endorsement": 1.0,
+          "operator-scope": 1.0,
+          "cargo-containment": 1.8
+        },
         baseline: { massVariance: 1.2, thermalVariance: 6.5, iffDrift: 2.2, emApertures: 1 }
       }
     }

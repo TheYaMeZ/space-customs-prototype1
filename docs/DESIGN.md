@@ -38,7 +38,7 @@ The interface should feel terminal-like without becoming a typing game. It shoul
 
 The player should choose what to investigate from vessel class, passive readings, paperwork, and relationships between values. Scanner selection should follow a hypothesis, not a random guess.
 
-Every real violation needs at least one meaningful clue before its confirming scan. Clean ships may carry benign anomalies so a clue never becomes automatic proof.
+Every real violation needs at least one meaningful clue before resolution. Some regulations are proven by comparing visible dossier fields, while others still require a confirming scan. Clean ships may carry benign anomalies so a clue never becomes automatic proof.
 
 ### Raw Evidence, Not Verdicts
 
@@ -67,33 +67,38 @@ Contacts remain long enough to read, but unresolved ships eventually leave and c
 3. Review passive readings, declaration data, cargo paperwork, and lower-confidence irregularities expressed through the records themselves.
 4. Form a suspicion and run one or more active systems.
 5. Read the resulting raw scan record.
-6. Mark any alleged active-rule violations whose confirming report is available.
+6. Mark any alleged active-rule violations whose evidence path is available: dossier rules are markable from the visible packet, while scan-confirmed rules require their report.
 7. Remove accidental or reconsidered allegations as needed.
 8. Clear a ship with no allegations, or detain it with the exact alleged violation set.
 9. Use the Ops Log and end-of-shift report to understand mistakes and resource use.
 
-Current shifts last ten minutes. Four of five regulations are active. Up to four contacts may occupy the lane. Active systems take two to four seconds, consume a shared eight-point power reserve, and power regenerates over time.
+Current shifts last ten minutes. Four regulations are active, selected as a mix of dossier-confirmed and scan-confirmed rules. Up to four contacts may occupy the lane. Active systems take two to four seconds, consume a shared eight-point power reserve, and power regenerates over time.
 
 ## Current Evidence Language
 
-The prototype uses neutral anomaly categories:
+The passive survey uses neutral anomaly categories:
 
 - `MASS VAR`
 - `THERMAL VAR`
 - `IFF ECHO`
 - `EM ECHO`
 
-These indicate that a value is unusual enough to inspect. They are not offences and should not map one-to-one to guilt.
+These indicate that a broad sensor channel is unusual enough to inspect. They are not offences and should not map one-to-one to guilt.
+
+Dossier fields may still carry hidden irregularity scores for Focus Assist and generator validation, but dossier rows should not show category badges. Manual-rule play should come from reading and comparing records, not from spotting `DOC VAR` or other internal labels.
 
 Ship classes bias which violations are more common and define normal passive baselines. They must never hard-restrict a class to one kind of offence, and the UI should not explicitly teach a class lookup table.
 
 ## Active Regulations
 
-- `REG-12`: restricted military hull registration, confirmed by Active Ping.
+- `REG-12`: restricted hull authority, confirmed by Active Ping.
 - `ARM-04`: civil defensive-system licensing, confirmed by Module Query.
-- `MAT-31`: prohibited component manufacturer, confirmed by Module Query.
+- `MAT-31`: active component recall lot, confirmed by Module Query.
 - `OPS-08`: reactor output above rated limits, confirmed by Thermal Lens.
 - `CAR-19`: cargo mass or seal mismatch, confirmed by Hold Tomography.
+- `RTE-17`: restricted-origin route endorsement, confirmed from dossier records.
+- `LIC-22`: operator licence scope, confirmed from dossier records.
+- `CAR-27`: habitat cargo containment certificate, confirmed from dossier records.
 
 Only active regulations may generate violations during a shift.
 
@@ -120,4 +125,3 @@ Only active regulations may generate violations during a shift.
 ## Source Material
 
 [`../IDEA.md`](../IDEA.md) contains the broader game concept. [`../prototype1-scope.md`](../prototype1-scope.md) defines the original reduction in scope. This document is canonical when those early notes differ from playtest-driven decisions in the current prototype.
-

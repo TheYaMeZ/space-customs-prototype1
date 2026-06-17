@@ -14,6 +14,7 @@
     scansUsed: {},
     focusUses: 0,
     activeRuleIds: [],
+    ruleVariants: {},
     nextShipId: 1,
     nextSpawnAt: config.shiftDuration - 10,
     traffic: [],
@@ -30,7 +31,11 @@
   }
 
   function activeRules() {
-    return state.activeRuleIds.map((ruleId) => data.rules.find((rule) => rule.id === ruleId));
+    return state.activeRuleIds.map((ruleId) => {
+      const rule = data.rules.find((item) => item.id === ruleId);
+      const variant = state.ruleVariants[ruleId];
+      return variant ? { ...rule, criterion: variant.criterion ?? rule.criterion, activeVariant: variant } : rule;
+    });
   }
 
   function scanConfig(scanId) {
@@ -58,7 +63,7 @@
 
   function spawnShip() {
     if (state.mode !== "active" || state.traffic.length >= config.maxContacts) return;
-    const ship = generator.generateShip(state.activeRuleIds, state.nextShipId++);
+    const ship = generator.generateShip(state.activeRuleIds, state.nextShipId++, state.ruleVariants);
     state.traffic.push(ship);
     state.selectedShipId ??= ship.id;
     addLog(`${ship.name} entered lane control. Passive survey and declaration packet received.`);
@@ -100,13 +105,19 @@
       return;
     }
 
+    const isRecordCheck = !strongest.key.startsWith("passive.") && !strongest.key.startsWith("scan.");
     ship.assistHighlightKeys = visible
-      .filter((item) =>
-        item.anomalyCategory === strongest.anomalyCategory &&
-        item.anomalyScore >= strongest.anomalyScore - 12
-      )
+      .filter((item) => {
+        const closeScore = item.anomalyScore >= strongest.anomalyScore - 12;
+        if (!closeScore) return false;
+        if (!isRecordCheck) return item.anomalyCategory === strongest.anomalyCategory;
+        return item.ruleIds.some((ruleId) => strongest.ruleIds.includes(ruleId));
+      })
       .map((item) => item.key);
-    ship.assistMessage = `PATTERN ISOLATED: ${strongest.anomalyCategory}`;
+    const category = strongest.key.startsWith("passive.") || strongest.key.startsWith("scan.")
+      ? strongest.anomalyCategory
+      : "RECORD CHECK";
+    ship.assistMessage = `PATTERN ISOLATED: ${category}`;
   }
 
   function useAssist() {
@@ -158,9 +169,11 @@
 
   function hasConfirmingReport(ship, ruleId) {
     const rule = activeRules().find((item) => item.id === ruleId);
+    if (ship && rule?.evidenceType === "dossier") return true;
     return Boolean(
       ship &&
       rule &&
+      rule.confirmingScan &&
       ship.reports.some((report) => report.action === rule.confirmingScan && report.discovered)
     );
   }
@@ -196,17 +209,27 @@
     return ship.reports.find((report) => report.action === action)?.lines.find((line) => line.label === label)?.value;
   }
 
+  function dossierValue(ship, label) {
+    return ship.dossier.find((line) => line.label === label)?.value;
+  }
+
   function describeViolation(ship, ruleId) {
-    const rule = data.rules.find((item) => item.id === ruleId);
+    const rule = activeRules().find((item) => item.id === ruleId) ?? data.rules.find((item) => item.id === ruleId);
     const moduleReport = ship.reports.find((report) => report.action === "modules");
     const unlicensed = moduleReport?.lines.find((line) => line.label.endsWith(".LIC") && line.value === "NONE");
-    const banned = moduleReport?.lines.find((line) => line.label.endsWith(".MAKE") && line.value === data.bannedManufacturer.name);
+    const recalled = moduleReport?.lines.find((line) => line.label.endsWith(".LOT") && line.anomalyScore >= 90);
+    const thermalSamples = ship.reports.find((report) => report.action === "thermal")?.lines
+      .filter((line) => line.label.startsWith("SAMPLE."))
+      .map((line) => Number.parseFloat(line.value)) ?? [];
     const details = {
       "military-registry": `measured hull ${reportValue(ship, "transponder", "MEASURED.HULL")}; endorsement ${reportValue(ship, "transponder", "REGISTRY.ENDORSEMENT")}`,
       "weapon-license": `${unlicensed?.label.split(".")[0]} point-defence licence NONE`,
-      "banned-manufacturer": `${banned?.label.split(".")[0]} ${data.bannedManufacturer.name}`,
-      "unsafe-reactor": `peak output ${Math.max(...ship.reports.find((report) => report.action === "thermal").lines.filter((line) => line.label.startsWith("SAMPLE.")).map((line) => Number.parseFloat(line.value))).toFixed(1)}%`,
-      "manifest-match": `manifest ${reportValue(ship, "cargo", "MANIFEST.MASS")}; measured ${reportValue(ship, "cargo", "MEASURED.MASS")}; delta ${reportValue(ship, "cargo", "MASS.DELTA")}`
+      "component-recall": `${recalled?.label.split(".")[0]} lot ${recalled?.value}; policy ${ship.ruleEvidence?.["component-recall"] ?? rule.criterion}`,
+      "unsafe-reactor": `peak output ${thermalSamples.length ? Math.max(...thermalSamples).toFixed(1) : "unscanned"}%`,
+      "manifest-match": `manifest ${reportValue(ship, "cargo", "MANIFEST.MASS")}; measured ${reportValue(ship, "cargo", "MEASURED.MASS")}; delta ${reportValue(ship, "cargo", "MASS.DELTA")}`,
+      "route-endorsement": ship.ruleEvidence?.["route-endorsement"] ?? `${dossierValue(ship, "ORIGIN STATUS")}; route endorsement ${dossierValue(ship, "ROUTE ENDORSEMENT")}`,
+      "operator-scope": ship.ruleEvidence?.["operator-scope"] ?? `${dossierValue(ship, "OPERATOR LICENCE")}; cargo hazard ${dossierValue(ship, "HAZARD CLASS")}`,
+      "cargo-containment": ship.ruleEvidence?.["cargo-containment"] ?? `${dossierValue(ship, "HAZARD CLASS")} cargo to ${dossierValue(ship, "DESTINATION TYPE")}; containment ${dossierValue(ship, "CONTAINMENT CERT")}`
     };
     return `${rule.code}: ${details[ruleId]}`;
   }
@@ -220,13 +243,23 @@
   function missedViolationDetail(ship, ruleId) {
     const rule = data.rules.find((item) => item.id === ruleId);
     const hint = primaryHint(ship, ruleId);
-    return `${describeViolation(ship, ruleId)}; cue ${hint?.anomalyCategory ?? hint?.label ?? "none"}; confirm with ${scanConfig(rule.confirmingScan).label}`;
+    const proof = rule.evidenceType === "dossier"
+      ? "evidence in dossier"
+      : `confirm with ${scanConfig(rule.confirmingScan).label}`;
+    return `${describeViolation(ship, ruleId)}; cue ${hint?.anomalyCategory ?? hint?.label ?? "none"}; ${proof}`;
   }
 
   function unsupportedAllegationDetail(ship, ruleId) {
     const rule = data.rules.find((item) => item.id === ruleId);
+    if (rule.evidenceType === "dossier") {
+      const values = ship.dossier
+        .filter((line) => line.ruleIds.includes(ruleId))
+        .map((line) => `${line.label} ${line.value}`)
+        .join(", ");
+      return `${rule.code}: ${values || "no relevant dossier values"}; dossier did not support allegation`;
+    }
     const report = ship.reports.find((item) => item.action === rule.confirmingScan);
-    const values = report.lines
+    const values = (report?.lines ?? [])
       .filter((line) => line.ruleIds.includes(ruleId))
       .map((line) => `${line.label} ${line.value}`)
       .join(", ");
@@ -338,7 +371,8 @@
       powerRegenerated: 0,
       scansUsed: {},
       focusUses: 0,
-      activeRuleIds: utils.shuffle(data.rules).slice(0, config.activeRuleCount).map((rule) => rule.id),
+      activeRuleIds: [],
+      ruleVariants: {},
       nextShipId: 1,
       nextSpawnAt: config.shiftDuration - 10,
       traffic: [],
@@ -349,6 +383,8 @@
       resolvedShips: 0,
       collapsed: { rules: false, systems: false }
     });
+    state.activeRuleIds = generator.selectActiveRuleIds();
+    state.ruleVariants = generator.selectRuleVariants(state.activeRuleIds);
     scheduleNextSpawn();
     addLog("Workstation initialised. Awaiting shift authority.");
     namespace.ui?.showBriefing();

@@ -32,7 +32,7 @@ This file records consequential choices that are easy to accidentally reverse. I
 
 **Why:** Confidence grades felt artificial and risked becoming a direct suspicion ranking rather than part of the fiction.
 
-**Consequence:** Sources may have names for flavour, but they are not ranked `A-D`. Neutral tags such as `MASS VAR` and `IFF ECHO` direct attention without proving guilt.
+**Consequence:** Sources may have names for flavour, but they are not ranked `A-D`. Passive survey tags such as `MASS VAR` and `IFF ECHO` direct attention without proving guilt. Dossier irregularity metadata stays hidden so paperwork checks rely on comparing values.
 
 ## D-005: Ship Class Is Intuitive, Not a Lookup Table
 
@@ -68,7 +68,7 @@ This file records consequential choices that are easy to accidentally reverse. I
 
 ## D-009: Allegations Are Evidence-Linked and Reversible
 
-**Decision:** A regulation can be marked after its confirming report is available, regardless of whether that report proves a violation. Marks can be removed before resolution.
+**Decision:** A scan-confirmed regulation can be marked after its confirming report is available, regardless of whether that report proves a violation. A dossier-confirmed regulation can be marked once the ship is selected because its evidence is already visible. Marks can be removed before resolution.
 
 **Why:** Enabling a control based on hidden correctness gives away the answer, while irreversible filing makes accidental input disproportionately punishing.
 
@@ -114,3 +114,10 @@ This file records consequential choices that are easy to accidentally reverse. I
 
 **Consequence:** Avoid generic dashboard cards, glossy science-fiction holograms, decorative animation, and visual density that crushes the evidence.
 
+## D-015: Manual Dossier Rules Are First-Class Regulations
+
+**Decision:** Keep a mix of dossier-confirmed and scan-confirmed active regulations. Dossier rules are solved by comparing visible paperwork, route, licence, cargo, and authority values; scan rules still require active systems for physical proof.
+
+**Why:** If every violation requires a scanner, pre-scan reading becomes only a way to choose instruments. Manual rules make document inspection itself part of the core game.
+
+**Consequence:** Active-rule selection preserves a dossier/scan mix. Generator validation checks both evidence paths. Manual rules still need visible clues and benign false leads, and they must not collapse into single bad strings.

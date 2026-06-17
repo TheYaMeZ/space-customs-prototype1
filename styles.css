@@ -473,9 +473,10 @@ h3 {
 }
 
 .form-row {
+  position: relative;
   min-height: 22px;
   display: grid;
-  grid-template-columns: minmax(116px, 0.7fr) 1.3fr;
+  grid-template-columns: 142px minmax(0, 1fr);
   align-items: baseline;
   gap: 10px;
   padding: 2px 0;
@@ -492,12 +493,16 @@ h3 {
 }
 
 .evidence-row.is-focused {
+  padding-right: 42px;
   background: rgba(225, 180, 95, 0.13);
   outline: 1px solid rgba(225, 180, 95, 0.45);
   outline-offset: -1px;
 }
 
 .assist-mark {
+  position: absolute;
+  right: 0;
+  top: 3px;
   color: var(--amber);
   font-size: 0.56rem;
   font-style: normal;
@@ -550,7 +555,7 @@ h3 {
 
 .anomaly-tag {
   display: inline-block;
-  margin-top: 7px;
+  margin-top: 0;
   padding: 2px 4px;
   border: 1px solid #58644f;
   color: #9cae8c;
@@ -1049,6 +1054,10 @@ h3 {
 
   .form-columns {
     grid-template-columns: 1fr;
+  }
+
+  .form-row {
+    grid-template-columns: 112px minmax(0, 1fr);
   }
 
   .dossier-heading {

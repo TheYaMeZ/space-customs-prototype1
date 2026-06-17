@@ -73,6 +73,9 @@
       const selected = state.selectedRuleId === rule.id;
       const alleged = ship?.allegedViolationIds.includes(rule.id);
       const canMark = engine.hasConfirmingReport(ship, rule.id);
+      const evidenceLine = rule.evidenceType === "dossier"
+        ? "Evidence: DOSSIER"
+        : `Confirm: ${engine.scanConfig(rule.confirmingScan).label}`;
       return `
         <div class="rule-row ${selected ? "is-selected" : ""} ${alleged ? "is-alleged" : ""}">
           <button class="rule-select" data-rule="${rule.id}">
@@ -80,7 +83,7 @@
             ${selected ? '<b class="selected-marker">SELECTED</b>' : ""}
             <strong>${rule.title}</strong>
             <small>${rule.criterion}</small>
-            <em>Confirm: ${engine.scanConfig(rule.confirmingScan).label}</em>
+            <em>${evidenceLine}</em>
           </button>
           <button class="rule-mark" data-allegation-rule="${rule.id}" ${canMark ? "" : "disabled"}>${alleged ? "REMOVE" : "MARK"}</button>
         </div>
@@ -132,7 +135,9 @@
     els.shipSummary.textContent = ship.pilotNote;
 
     const declaration = ship.dossier.filter((item) => item.key.startsWith("declaration."));
+    const route = ship.dossier.filter((item) => item.key.startsWith("route."));
     const cargo = ship.dossier.filter((item) => item.key.startsWith("manifest.") || item.key.startsWith("load."));
+    const service = ship.dossier.filter((item) => item.key.startsWith("service."));
     els.shipDataBoard.innerHTML = `
       <section class="form-section">
         <h4>00 / PASSIVE SURVEY</h4>
@@ -155,8 +160,19 @@
         </div>
       </section>
       <section class="form-section">
-        <h4>02 / CARGO AND LOAD RECORDS</h4>
+        <h4>02 / ROUTE AND AUTHORITY</h4>
+        <div class="form-columns">
+          <div>${route.slice(0, Math.ceil(route.length / 2)).map((item) => formRow(ship, item)).join("")}</div>
+          <div>${route.slice(Math.ceil(route.length / 2)).map((item) => formRow(ship, item)).join("")}</div>
+        </div>
+      </section>
+      <section class="form-section">
+        <h4>03 / CARGO AND LOAD RECORDS</h4>
         ${cargo.map((item) => formRow(ship, item)).join("")}
+      </section>
+      <section class="form-section">
+        <h4>04 / SERVICE RECORD</h4>
+        ${service.map((item) => formRow(ship, item)).join("")}
       </section>
     `;
   }
@@ -164,7 +180,7 @@
   function renderActions() {
     const { state } = engine;
     const ship = engine.getShip();
-    const essentialScans = new Set(engine.activeRules().map((rule) => rule.confirmingScan));
+    const essentialScans = new Set(engine.activeRules().map((rule) => rule.confirmingScan).filter(Boolean));
     els.actionGrid.innerHTML = config.scans.map((scan) => {
       const report = ship?.reports.find((item) => item.action === scan.id);
       const remaining = ship?.scansRunning[scan.id];
@@ -287,7 +303,7 @@
     els.overlaySummary.textContent =
       `${config.activeRuleCount} regulations are active. Vessel class, passive readings, and paperwork can suggest where closer inspection may pay off. A cue is not proof.`;
     els.overlayRules.innerHTML = engine.activeRules().map((rule) => `
-      <li><strong>${rule.code}</strong> ${rule.criterion}<br>Confirm with ${engine.scanConfig(rule.confirmingScan).label}.</li>
+      <li><strong>${rule.code}</strong> ${rule.criterion}<br>${rule.evidenceType === "dossier" ? "Evidence in dossier." : `Confirm with ${engine.scanConfig(rule.confirmingScan).label}.`}</li>
     `).join("");
     els.overlayAction.classList.remove("hidden");
     els.overlayRestart.classList.add("hidden");
