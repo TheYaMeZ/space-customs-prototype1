@@ -64,7 +64,7 @@ Contacts remain long enough to read, but unresolved ships eventually leave and c
 
 1. Read the four active regulations before starting the shift.
 2. Monitor incoming contacts and their remaining lane time.
-3. Review passive readings, declaration data, cargo paperwork, and lower-confidence irregularities expressed through the records themselves.
+3. Review passive readings immediately while waiting for the vessel declaration packet, then inspect declaration data, cargo paperwork, and lower-confidence irregularities once the packet arrives.
 4. Form a suspicion and run one or more active systems.
 5. Read the resulting raw scan record.
 6. Mark any alleged active-rule violations whose evidence path is available: dossier rules are markable from the visible packet, while scan-confirmed rules require their report.
@@ -74,7 +74,7 @@ Contacts remain long enough to read, but unresolved ships eventually leave and c
 
 Current shifts last ten minutes. Four regulations are active, selected as a mix of dossier-confirmed and scan-confirmed rules. Up to four contacts may occupy the lane. Active systems take two to four seconds, consume a shared eight-point power reserve, and power regenerates over time.
 
-The bottom dock separates two kinds of feedback. Ops Log remains the explicit workstation/audit channel. Lane Comms is a clipped radio transcript for arrivals, scan requests, scan returns, clear/detain instructions, and lost contacts. Comms may reinforce timing and lane atmosphere, but it must not add proof, recommend scanners, or reveal correctness.
+The bottom dock separates two kinds of feedback. Ops Log remains the explicit workstation/audit channel. Lane Comms is a clipped radio transcript for arrivals, delayed packet acknowledgements, scan requests, scan returns, and clear/detain instructions. Comms may reinforce timing and lane atmosphere, but it must not add proof, recommend scanners, reveal correctness, or duplicate non-radio departure notices.
 
 ## Current Evidence Language
 

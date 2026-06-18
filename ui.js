@@ -107,8 +107,8 @@
     const { state } = engine;
     els.trafficLoad.textContent = `${state.traffic.length} CONTACT${state.traffic.length === 1 ? "" : "S"}`;
     els.trafficList.innerHTML = state.traffic.map((ship) => `
-      <button class="contact-tab ${ship.id === state.selectedShipId ? "is-selected" : ""} ${ship.leaveIn <= 30 ? "is-urgent" : ""}" data-ship="${ship.id}">
-        <strong>${ship.name}</strong><span>${ship.className}</span><span>T-${ship.leaveIn}</span>
+      <button class="contact-tab ${ship.id === state.selectedShipId ? "is-selected" : ""} ${ship.leaveIn <= 30 ? "is-urgent" : ""} ${ship.packetStatus === "pending" ? "is-packet-pending" : ""}" data-ship="${ship.id}">
+        <strong>${ship.name}</strong><span>${ship.className}</span><span>${ship.packetStatus === "pending" ? "PKT WAIT" : `T-${ship.leaveIn}`}</span>
       </button>
     `).join("");
     els.trafficList.querySelectorAll("[data-ship]").forEach((button) => {
@@ -133,13 +133,11 @@
 
     els.shipName.textContent = ship.name;
     els.shipDeparture.textContent = `T-${ship.leaveIn} SEC`;
-    els.shipSummary.textContent = ship.pilotNote;
+    els.shipSummary.textContent = ship.packetStatus === "pending"
+      ? "Passive survey received. Waiting for vessel declaration packet over Lane Comms."
+      : ship.pilotNote;
 
-    const declaration = ship.dossier.filter((item) => item.key.startsWith("declaration."));
-    const route = ship.dossier.filter((item) => item.key.startsWith("route."));
-    const cargo = ship.dossier.filter((item) => item.key.startsWith("manifest.") || item.key.startsWith("load."));
-    const service = ship.dossier.filter((item) => item.key.startsWith("service."));
-    els.shipDataBoard.innerHTML = `
+    const passiveSection = `
       <section class="form-section">
         <h4>00 / PASSIVE SURVEY</h4>
         <div class="passive-grid">
@@ -153,6 +151,25 @@
           `).join("")}
         </div>
       </section>
+    `;
+
+    if (ship.packetStatus === "pending") {
+      els.shipDataBoard.innerHTML = `
+        ${passiveSection}
+        <section class="form-section packet-pending">
+          <h4>01 / DECLARATION PACKET</h4>
+          <p>AWAITING VESSEL RESPONSE ON LANE COMMS</p>
+        </section>
+      `;
+      return;
+    }
+
+    const declaration = ship.dossier.filter((item) => item.key.startsWith("declaration."));
+    const route = ship.dossier.filter((item) => item.key.startsWith("route."));
+    const cargo = ship.dossier.filter((item) => item.key.startsWith("manifest.") || item.key.startsWith("load."));
+    const service = ship.dossier.filter((item) => item.key.startsWith("service."));
+    els.shipDataBoard.innerHTML = `
+      ${passiveSection}
       <section class="form-section">
         <h4>01 / DECLARATION</h4>
         <div class="form-columns">

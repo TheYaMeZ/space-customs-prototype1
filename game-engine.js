@@ -23,6 +23,7 @@
     selectedReportId: null,
     log: [],
     comms: [],
+    scheduledComms: [],
     commsClock: 0,
     resolvedShips: 0,
     collapsed: { rules: false, systems: false }
@@ -53,6 +54,10 @@
     return ship?.reports.find((report) => report.id === state.selectedReportId) ?? null;
   }
 
+  function packetReceived(ship) {
+    return ship?.packetStatus !== "pending";
+  }
+
   function addLog(message, tone = "info") {
     state.log.unshift({ id: `${Date.now()}-${Math.random()}`, message, tone });
     state.log = state.log.slice(0, 24);
@@ -63,30 +68,93 @@
     return Math.min(3, Math.max(1, Math.ceil(message.length / 46)));
   }
 
-  function addComms({ direction = "rx", speaker = "LANE", message, tone = "traffic" }) {
-    if (!message) return;
+  const commsResponses = {
+    packet(ship) {
+      return utils.randomFrom([
+        `J4 Control, ${ship.name}. ${ship.className} packet is uplinked; holding inspection vector.`,
+        `${ship.name} to J4. Declaration packet sent. Holding vector and awaiting customs readback.`,
+        `J4, ${ship.name}. Packet transfer complete; nav is steady on your lane marker.`
+      ]);
+    },
+    scanStandby(ship, scan) {
+      return utils.randomFrom([
+        `${ship.name} copies. Holding attitude for ${scan.label.toLowerCase()}.`,
+        `Standing by for ${scan.label.toLowerCase()}, J4. Thrusters cold.`,
+        `${ship.name}. Present attitude locked; ready for your ${scan.label.toLowerCase()}.`
+      ]);
+    },
+    scanReturn(ship, scan) {
+      return utils.randomFrom([
+        `${scan.label.toLowerCase()} return complete. Holding for customs instruction.`,
+        `J4, ${ship.name}. ${scan.label.toLowerCase()} handshake closed; awaiting your call.`,
+        `${ship.name} confirms ${scan.label.toLowerCase()} cycle complete. Still on lane vector.`
+      ]);
+    },
+    clear(ship) {
+      return utils.randomFrom([
+        `${ship.name} copies release. Resuming filed route.`,
+        `Customs release received, J4. ${ship.name} is outbound on filed vector.`,
+        `${ship.name}. Release logged; thanks control.`
+      ]);
+    },
+    detain(ship) {
+      return utils.randomFrom([
+        `${ship.name} copies detention order. Holding position.`,
+        `Detention order received, J4. ${ship.name} is safing drives.`,
+        `${ship.name}. Holding for authority channel transfer.`
+      ]);
+    }
+  };
+
+  function completeCommsEffect(entry) {
+    if (entry.onComplete?.type !== "packet-received") return;
+    const ship = getShip(entry.onComplete.shipId);
+    if (!ship || ship.packetStatus === "received") return;
+    ship.packetStatus = "received";
+    addLog(`${ship.name}: declaration packet received.`);
+  }
+
+  function insertComms(entry) {
     state.comms.unshift({
-      id: `${Date.now()}-${Math.random()}`,
-      direction,
-      speaker,
-      message,
-      tone,
+      ...entry,
       status: "pending",
-      revealAt: state.commsClock + transmissionDuration(message)
+      revealAt: state.commsClock + transmissionDuration(entry.message)
     });
     state.comms = state.comms.slice(0, 24);
     namespace.ui?.renderComms();
   }
 
+  function addComms({ direction = "rx", speaker = "LANE", message, tone = "traffic", delay = 0, onComplete = null }) {
+    if (!message) return;
+    const entry = {
+      id: `${Date.now()}-${Math.random()}`,
+      direction,
+      speaker,
+      message,
+      tone,
+      onComplete,
+      startsAt: state.commsClock + delay
+    };
+    if (delay > 0) {
+      state.scheduledComms.push(entry);
+      return;
+    }
+    insertComms(entry);
+  }
+
   function tickComms() {
     let changed = false;
+    const due = state.scheduledComms.filter((entry) => entry.startsAt <= state.commsClock);
+    state.scheduledComms = state.scheduledComms.filter((entry) => entry.startsAt > state.commsClock);
+    due.forEach(insertComms);
     state.comms.forEach((entry) => {
       if (entry.status === "pending" && state.commsClock >= entry.revealAt) {
         entry.status = "complete";
+        completeCommsEffect(entry);
         changed = true;
       }
     });
-    if (changed) namespace.ui?.renderComms();
+    if (changed) refresh();
   }
 
   function scheduleNextSpawn() {
@@ -96,9 +164,10 @@
   function spawnShip() {
     if (state.mode !== "active" || state.traffic.length >= config.maxContacts) return;
     const ship = generator.generateShip(state.activeRuleIds, state.nextShipId++, state.ruleVariants);
+    ship.packetStatus = "pending";
     state.traffic.push(ship);
     state.selectedShipId ??= ship.id;
-    addLog(`${ship.name} entered lane control. Passive survey and declaration packet received.`);
+    addLog(`${ship.name} entered lane control. Passive survey acquired; declaration packet requested.`);
     addComms({
       direction: "tx",
       speaker: "J4 CONTROL",
@@ -107,7 +176,9 @@
     addComms({
       direction: "rx",
       speaker: ship.name,
-      message: `J4 Control, ${ship.name}. ${ship.className} packet is uplinked; holding inspection vector.`
+      message: commsResponses.packet(ship),
+      delay: 2,
+      onComplete: { type: "packet-received", shipId: ship.id }
     });
     scheduleNextSpawn();
     refresh();
@@ -144,12 +215,19 @@
       speaker: "J4 CONTROL",
       message: `${ship.name}, stand by for ${scan.label.toLowerCase()} acquisition. Maintain present attitude.`
     });
+    addComms({
+      direction: "rx",
+      speaker: ship.name,
+      message: commsResponses.scanStandby(ship, scan),
+      delay: 1
+    });
     refresh();
   }
 
   function evaluateAssist(ship) {
     if (!ship?.assistActive) return;
-    const visible = generator.visibleAnomalies(ship);
+    const visible = generator.visibleAnomalies(ship)
+      .filter((item) => packetReceived(ship) || item.key.startsWith("passive.") || item.key.startsWith("scan."));
     const strongest = visible.reduce((best, item) => item.anomalyScore > (best?.anomalyScore ?? -1) ? item : best, null);
 
     if (!strongest || strongest.anomalyScore < config.assistThreshold) {
@@ -209,7 +287,7 @@
         addComms({
           direction: "rx",
           speaker: ship.name,
-          message: `${scanConfig(scanId).label.toLowerCase()} return complete. Holding for customs instruction.`
+          message: commsResponses.scanReturn(ship, scanConfig(scanId))
         });
         if (ship.assistActive) addLog(`${ship.name}: Assist re-analysis: ${ship.assistMessage}.`);
       }
@@ -227,7 +305,7 @@
 
   function hasConfirmingReport(ship, ruleId) {
     const rule = activeRules().find((item) => item.id === ruleId);
-    if (ship && rule?.evidenceType === "dossier") return true;
+    if (ship && rule?.evidenceType === "dossier") return packetReceived(ship);
     return Boolean(
       ship &&
       rule &&
@@ -249,7 +327,10 @@
     }
     state.selectedRuleId = rule.id;
     if (!hasConfirmingReport(ship, rule.id)) {
-      addLog(`${rule.code} requires a completed ${scanConfig(rule.confirmingScan).label} record.`, "warn");
+      const requirement = rule.evidenceType === "dossier"
+        ? "received declaration packet"
+        : `completed ${scanConfig(rule.confirmingScan).label} record`;
+      addLog(`${rule.code} requires a ${requirement}.`, "warn");
       return;
     }
 
@@ -367,6 +448,12 @@
           ? `${ship.name}, customs release granted. Resume filed route.`
           : `${ship.name}, hold position. Detention order follows on authority channel.`
       });
+      addComms({
+        direction: "rx",
+        speaker: ship.name,
+        message: decision === "clear" ? commsResponses.clear(ship) : commsResponses.detain(ship),
+        delay: 1
+      });
     } else {
       state.mistakes += 1;
       state.score = Math.max(0, state.score - 10);
@@ -374,7 +461,7 @@
       addComms({
         direction: "tx",
         speaker: "J4 CONTROL",
-        message: `${ship.name}, ruling transmission logged. Stand by for audit correction.`
+        message: `${ship.name}, ruling transmission logged. Hold for amended lane instruction.`
       });
     }
 
@@ -401,12 +488,6 @@
       } else {
         addLog(`${ship.name} departed unresolved. Miss recorded; audit result: no active-rule violations.`, "alert");
       }
-      addComms({
-        direction: "rx",
-        speaker: "LANE RELAY",
-        message: `${ship.name} left controlled volume without final customs release. Contact closed.`,
-        tone: "alert"
-      });
     });
     if (!getShip()) state.selectedShipId = state.traffic[0]?.id ?? null;
   }
@@ -464,6 +545,7 @@
       selectedReportId: null,
       log: [],
       comms: [],
+      scheduledComms: [],
       commsClock: 0,
       resolvedShips: 0,
       collapsed: { rules: false, systems: false }

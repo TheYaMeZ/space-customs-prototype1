@@ -124,8 +124,8 @@ This file records consequential choices that are easy to accidentally reverse. I
 
 ## D-016: Lane Comms Is Transcript Flavor, Not Evidence
 
-**Decision:** Add Lane Comms as a clipped radio transcript for arrivals, scan requests, scan returns, and final lane instructions.
+**Decision:** Add Lane Comms as a clipped radio transcript for arrivals, declaration-packet acknowledgements, scan requests, scan returns, and final lane instructions.
 
 **Why:** The bottom corners need useful presence, and radio traffic strengthens the fantasy of managing a live customs lane without adding another proof system.
 
-**Consequence:** Comms rows may animate transmission timing with `TX` and `RX` pending states, but they must not reveal hidden truth, recommend scanners, or provide correctness feedback. Ops Log remains the explicit audit and diagnostic channel.
+**Consequence:** Comms rows may animate transmission timing with `TX` and `RX` pending states, including delayed vessel replies. They must not reveal hidden truth, recommend scanners, provide correctness feedback, or duplicate non-radio departure notices. Ops Log remains the explicit audit and diagnostic channel.

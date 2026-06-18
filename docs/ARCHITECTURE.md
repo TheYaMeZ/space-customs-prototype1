@@ -157,6 +157,7 @@ Minimal bootstrap:
   dossier,
   reports,
   scansRunning,
+  packetStatus,
   allegedViolationIds,
   actualViolations,
   benignHintRuleIds,
@@ -167,7 +168,7 @@ Minimal bootstrap:
 }
 ```
 
-`assistHighlightKeys` is added when Focus Assist evaluates visible evidence. `actualViolations`, `benignHintRuleIds`, `ruleEvidence`, and anomaly scores are hidden state and must not directly drive normal UI verdicts.
+`packetStatus` gates whether detailed dossier rows are currently visible. `assistHighlightKeys` is added when Focus Assist evaluates visible evidence. `actualViolations`, `benignHintRuleIds`, `ruleEvidence`, and anomaly scores are hidden state and must not directly drive normal UI verdicts.
 
 ### Engine State
 
@@ -183,7 +184,7 @@ The singleton `SpaceCustoms.engine.state` owns:
 
 Ship-specific scan, allegation, and assist state remains on each generated ship.
 
-Lane Comms entries are presentation state for non-proof radio transcript flavour. A pending entry reserves its row immediately with a `TX` or `RX` carrier indicator, then reveals its message after a short engine-tick delay. Comms must not inspect hidden violation truth or determine control availability.
+Lane Comms entries are presentation state for non-proof radio transcript flavour. A scheduled entry can be inserted after a short delay, then reserves its row with a `TX` or `RX` carrier indicator before revealing its message. Initial ship replies mark the declaration packet as received; Comms must not inspect hidden violation truth or otherwise determine correctness.
 
 ## Important Invariants
 
@@ -194,7 +195,7 @@ Lane Comms entries are presentation state for non-proof radio transcript flavour
 - Every dossier-confirmed violation has visible supporting fields in the dossier.
 - Legal ships may contain benign anomalies but no hidden active violation.
 - A scan-confirmed regulation becomes markable when its confirming report is discovered, independent of report truth.
-- A dossier-confirmed regulation is markable immediately once a ship is selected.
+- A dossier-confirmed regulation is markable once a ship is selected and its declaration packet has been received.
 - Detention succeeds only when alleged and actual violation sets match exactly.
 - Any unresolved departure counts as a miss and does not count as a resolved contact.
 - Focus Assist considers only evidence currently visible to the player.
