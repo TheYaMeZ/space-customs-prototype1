@@ -300,9 +300,8 @@
       const isPending = entry.status === "pending";
       return `
         <div class="comms-entry ${entry.direction} ${entry.tone} ${isPending ? "is-pending" : "is-complete"}">
-          <span class="comms-direction">${label}</span>
           <strong>${entry.speaker}</strong>
-          <p>${isPending ? placeholder : entry.message}</p>
+          <p>${isPending ? `<span class="comms-carrier">${label}</span> ${placeholder}` : entry.message}</p>
         </div>
       `;
     }).join("");

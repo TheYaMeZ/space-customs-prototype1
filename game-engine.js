@@ -68,40 +68,116 @@
     return Math.min(3, Math.max(1, Math.ceil(message.length / 46)));
   }
 
+  const scanControlCopy = {
+    transponder: [
+      (ship, scan) => `${ship.name}, submit to active transponder interrogation. Keep beacon power steady.`,
+      (ship, scan) => `${ship.name}, J4 Customs will run ${scan.label.toLowerCase()}. Hold registry channel open.`,
+      (ship, scan) => `${ship.name}, maintain lane vector. We are polling hull and authority records.`
+    ],
+    cargo: [
+      (ship, scan) => `${ship.name}, prepare for hold tomography. Lock cargo bay shutters and stand by.`,
+      (ship, scan) => `${ship.name}, submit to cargo scan. Keep mass dampers stable until acquisition closes.`,
+      (ship, scan) => `${ship.name}, J4 Customs is imaging your declared load. No bay cycling during scan.`
+    ],
+    modules: [
+      (ship, scan) => `${ship.name}, submit installed systems for module registry query.`,
+      (ship, scan) => `${ship.name}, keep service bus open. We are checking component registry returns.`,
+      (ship, scan) => `${ship.name}, J4 Customs is polling installed module licences. Hold configuration.`
+    ],
+    thermal: [
+      (ship, scan) => `${ship.name}, steady reactor output for thermal lens acquisition.`,
+      (ship, scan) => `${ship.name}, hold thrust idle. We are sampling your reactor profile.`,
+      (ship, scan) => `${ship.name}, thermal lens pass inbound. Keep output inside normal operating band.`
+    ]
+  };
+
+  function controlCopy(event, ship, scan = null) {
+    const pools = {
+      packet: [
+        () => `${ship.name}, this is J4 Customs. Hold lane vector and transmit declaration packet.`,
+        () => `${ship.name}, J4 Control. Maintain approach marker and uplink customs declaration.`,
+        () => `${ship.name}, customs check is active. Freeze vector and send registry packet.`
+      ],
+      clear: [
+        () => `${ship.name}, customs release granted. Resume filed route.`,
+        () => `${ship.name}, you are clear through J4. Keep to filed corridor until beacon handoff.`,
+        () => `${ship.name}, inspection closed. Proceed on declared transit vector.`
+      ],
+      detain: [
+        () => `${ship.name}, hold position. Detention order follows on authority channel.`,
+        () => `${ship.name}, do not depart lane. Power down transit burn and await authority transfer.`,
+        () => `${ship.name}, customs hold is in effect. Maintain position for detention control.`
+      ],
+      correction: [
+        () => `${ship.name}, ruling transmission logged. Hold for amended lane instruction.`,
+        () => `${ship.name}, customs ruling is under audit correction. Maintain present vector.`,
+        () => `${ship.name}, stand by. J4 is reconciling the ruling packet.`
+      ]
+    };
+    if (event === "scan" && scan) return utils.randomFrom(scanControlCopy[scan.id] ?? [
+      () => `${ship.name}, stand by for ${scan.label.toLowerCase()} acquisition. Maintain present attitude.`
+    ])(ship, scan);
+    return utils.randomFrom(pools[event])();
+  }
+
   const commsResponses = {
     packet(ship) {
       return utils.randomFrom([
         `J4 Control, ${ship.name}. ${ship.className} packet is uplinked; holding inspection vector.`,
         `${ship.name} to J4. Declaration packet sent. Holding vector and awaiting customs readback.`,
-        `J4, ${ship.name}. Packet transfer complete; nav is steady on your lane marker.`
+        `J4, ${ship.name}. Packet transfer complete; nav is steady on your lane marker.`,
+        `${ship.name} copies customs hold. Registry and load packet are on the wire.`,
+        `J4 Control, ${ship.name}. Declaration is away. We are hands-off the lane vector.`,
+        `${ship.name} responding. Packet is cleanly transferred; awaiting inspection sequence.`,
+        `J4, we have you. ${ship.name} is holding and the declaration packet is live.`
       ]);
     },
     scanStandby(ship, scan) {
       return utils.randomFrom([
         `${ship.name} copies. Holding attitude for ${scan.label.toLowerCase()}.`,
         `Standing by for ${scan.label.toLowerCase()}, J4. Thrusters cold.`,
-        `${ship.name}. Present attitude locked; ready for your ${scan.label.toLowerCase()}.`
+        `${ship.name}. Present attitude locked; ready for your ${scan.label.toLowerCase()}.`,
+        `J4, ${ship.name}. We are steady. Run your ${scan.label.toLowerCase()}.`,
+        `${ship.name} copies scan order. No bay or bus changes until you release us.`,
+        `Holding for customs acquisition. Call when the ${scan.label.toLowerCase()} is closed.`,
+        `${ship.name} has the lane lock. Proceed with ${scan.label.toLowerCase()}.`,
+        `Copy, J4. Crew is standing off controls for your scan pass.`
       ]);
     },
     scanReturn(ship, scan) {
       return utils.randomFrom([
         `${scan.label.toLowerCase()} return complete. Holding for customs instruction.`,
         `J4, ${ship.name}. ${scan.label.toLowerCase()} handshake closed; awaiting your call.`,
-        `${ship.name} confirms ${scan.label.toLowerCase()} cycle complete. Still on lane vector.`
+        `${ship.name} confirms ${scan.label.toLowerCase()} cycle complete. Still on lane vector.`,
+        `Customs acquisition closed on our board. ${ship.name} remains at hold.`,
+        `J4, our panel shows your ${scan.label.toLowerCase()} is complete. Standing by.`,
+        `${ship.name}. Scan cycle ended; no manoeuvre pending your release.`,
+        `Return acknowledged. ${ship.name} is waiting on customs disposition.`,
+        `J4 Control, ${ship.name}. Your scan pass is clear of our bus.`
       ]);
     },
     clear(ship) {
       return utils.randomFrom([
         `${ship.name} copies release. Resuming filed route.`,
         `Customs release received, J4. ${ship.name} is outbound on filed vector.`,
-        `${ship.name}. Release logged; thanks control.`
+        `${ship.name}. Release logged; thanks control.`,
+        `J4, ${ship.name} is clear and coming back onto transit power.`,
+        `${ship.name} copies clear. We will keep to the filed corridor.`,
+        `Release received. ${ship.name} departing lane control.`,
+        `Much obliged, J4. ${ship.name} is moving to beacon handoff.`,
+        `${ship.name} has your release. Safe watch, control.`
       ]);
     },
     detain(ship) {
       return utils.randomFrom([
         `${ship.name} copies detention order. Holding position.`,
         `Detention order received, J4. ${ship.name} is safing drives.`,
-        `${ship.name}. Holding for authority channel transfer.`
+        `${ship.name}. Holding for authority channel transfer.`,
+        `J4, ${ship.name} acknowledges customs hold. Main burn is locked out.`,
+        `Copy detention. ${ship.name} is maintaining lane position.`,
+        `${ship.name} received. We are standing by for enforcement instructions.`,
+        `Understood, J4. ${ship.name} will not depart controlled volume.`,
+        `${ship.name} is holding. Crew requests authority channel when ready.`
       ]);
     }
   };
@@ -171,7 +247,7 @@
     addComms({
       direction: "tx",
       speaker: "J4 CONTROL",
-      message: `${ship.name}, this is J4 Customs. Hold lane vector and transmit declaration packet.`
+      message: controlCopy("packet", ship)
     });
     addComms({
       direction: "rx",
@@ -213,7 +289,7 @@
     addComms({
       direction: "tx",
       speaker: "J4 CONTROL",
-      message: `${ship.name}, stand by for ${scan.label.toLowerCase()} acquisition. Maintain present attitude.`
+      message: controlCopy("scan", ship, scan)
     });
     addComms({
       direction: "rx",
@@ -444,9 +520,7 @@
       addComms({
         direction: "tx",
         speaker: "J4 CONTROL",
-        message: decision === "clear"
-          ? `${ship.name}, customs release granted. Resume filed route.`
-          : `${ship.name}, hold position. Detention order follows on authority channel.`
+        message: decision === "clear" ? controlCopy("clear", ship) : controlCopy("detain", ship)
       });
       addComms({
         direction: "rx",
@@ -461,7 +535,7 @@
       addComms({
         direction: "tx",
         speaker: "J4 CONTROL",
-        message: `${ship.name}, ruling transmission logged. Hold for amended lane instruction.`
+        message: controlCopy("correction", ship)
       });
     }
 
@@ -508,11 +582,6 @@
     state.mode = "active";
     namespace.ui.hideOverlay();
     addLog(`Shift active. Regulations: ${activeRules().map((rule) => rule.code).join(", ")}.`);
-    addComms({
-      direction: "tx",
-      speaker: "J4 CONTROL",
-      message: `Lane channel open. Active regulations ${activeRules().map((rule) => rule.code).join(", ")}.`
-    });
     spawnShip();
   }
 

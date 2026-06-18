@@ -1041,6 +1041,13 @@ h3,
 }
 
 @keyframes comms-carrier-pulse {
+  0%,
+  100% {
+    color: var(--amber);
+    background: transparent;
+    box-shadow: none;
+  }
+
   50% {
     color: #171a16;
     background: var(--amber);
@@ -1151,9 +1158,8 @@ h3,
 }
 
 .comms-entry {
-  min-height: 40px;
   display: grid;
-  grid-template-columns: 38px minmax(88px, 0.34fr) minmax(0, 1fr);
+  grid-template-columns: minmax(6.8rem, 0.28fr) minmax(0, 1fr);
   gap: 8px;
   align-items: center;
   padding: 5px 7px;
@@ -1164,54 +1170,66 @@ h3,
 }
 
 .comms-entry strong {
-  color: var(--amber);
   font-size: 0.64rem;
   font-weight: 400;
   overflow-wrap: anywhere;
+  padding-left: 5px;
 }
 
 .comms-entry p {
-  color: #a9d194;
   overflow-wrap: anywhere;
+  margin: 0;
 }
 
-.comms-direction {
-  justify-self: start;
-  min-width: 30px;
-  padding: 2px 4px;
-  border: 1px solid #4f624d;
-  background: #0b140d;
-  color: var(--phosphor-dim);
-  font-size: 0.6rem;
-  text-align: center;
+.comms-entry.tx {
+  box-shadow: inset 3px 0 rgba(225, 180, 95, 0.62);
 }
 
-.comms-entry.tx .comms-direction {
-  border-color: #8e7448;
+.comms-entry.tx strong,
+.comms-entry.tx p {
   color: var(--amber);
 }
 
-.comms-entry.rx .comms-direction {
-  border-color: #5d7656;
+.comms-entry.rx {
+  box-shadow: inset 3px 0 rgba(111, 145, 103, 0.55);
+}
+
+.comms-entry.rx strong {
   color: var(--phosphor);
 }
 
-.comms-entry.alert .comms-direction,
+.comms-entry.rx p {
+  color: #a9d194;
+}
+
 .comms-entry.alert strong {
   color: var(--red);
+}
+
+.comms-entry.alert p {
+  color: #e0a093;
 }
 
 .comms-entry.is-pending {
   background: rgba(225, 180, 95, 0.07);
 }
 
-.comms-entry.is-pending .comms-direction {
-  animation: comms-carrier-pulse 620ms steps(2, end) infinite;
-}
-
 .comms-entry.is-pending p {
   color: var(--phosphor-dim);
   letter-spacing: 0;
+}
+
+.screen-frame .comms-carrier {
+  display: inline-block;
+  min-width: 22px;
+  margin-right: 4px;
+  padding: 0 3px;
+  border: 1px solid currentColor;
+  color: var(--amber);
+  line-height: 1.2;
+  text-align: center;
+  will-change: color, background, box-shadow;
+  animation: comms-carrier-pulse 620ms steps(2, end) infinite;
 }
 
 .overlay {
@@ -1352,9 +1370,11 @@ h3,
   }
 
   .comms-entry {
-    grid-template-columns: 38px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
   }
 
+  .comms-entry strong,
   .comms-entry p {
     grid-column: 1 / -1;
   }

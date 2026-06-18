@@ -184,7 +184,7 @@ The singleton `SpaceCustoms.engine.state` owns:
 
 Ship-specific scan, allegation, and assist state remains on each generated ship.
 
-Lane Comms entries are presentation state for non-proof radio transcript flavour. A scheduled entry can be inserted after a short delay, then reserves its row with a `TX` or `RX` carrier indicator before revealing its message. Initial ship replies mark the declaration packet as received; Comms must not inspect hidden violation truth or otherwise determine correctness.
+Lane Comms entries are presentation state for non-proof radio transcript flavour. A scheduled entry can be inserted after a short delay, then reserves its row with a temporary `TX` or `RX` carrier label in the message area before revealing its transcript. Initial ship replies mark the declaration packet as received; Comms must not inspect hidden violation truth or otherwise determine correctness.
 
 ## Important Invariants
 
