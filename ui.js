@@ -50,7 +50,7 @@
       <div class="form-row evidence-row ${isAssisted(ship, item) ? "is-focused" : ""}">
         <span>${item.label}</span>
         <strong>${item.value}</strong>
-        ${isAssisted(ship, item) ? "<i class=\"assist-mark\">FOCUS</i>" : ""}
+        <i class="assist-mark ${isAssisted(ship, item) ? "is-visible" : ""}" aria-hidden="true">FOCUS</i>
       </div>
     `;
   }
@@ -253,7 +253,7 @@
           <div class="readout-row ${isAssisted(ship, item) ? "is-focused" : ""}">
             <span>${item.label}</span>
             <strong>${item.value}</strong>
-            ${isAssisted(ship, item) ? "<i>FOCUS</i>" : ""}
+            <i class="readout-focus ${isAssisted(ship, item) ? "is-visible" : ""}" aria-hidden="true">FOCUS</i>
           </div>
         `;
       }).join("");

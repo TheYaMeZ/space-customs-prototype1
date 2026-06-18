@@ -551,7 +551,7 @@ h3,
   position: relative;
   min-height: var(--dossier-row-step);
   display: grid;
-  grid-template-columns: 142px minmax(0, 1fr);
+  grid-template-columns: 142px minmax(0, 1fr) 48px;
   align-items: center;
   gap: 10px;
   padding: 0;
@@ -574,20 +574,30 @@ h3,
 }
 
 .evidence-row.is-focused {
-  padding-right: 42px;
   background: rgba(225, 180, 95, 0.13);
   outline: 1px solid rgba(225, 180, 95, 0.45);
   outline-offset: -1px;
+  box-shadow: inset 3px 0 var(--amber);
 }
 
 .assist-mark {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  justify-self: end;
+  min-width: 42px;
+  padding: 1px 3px;
+  border: 1px solid transparent;
+  visibility: hidden;
   color: var(--amber);
-  font-size: 0.56rem;
+  font-size: 0.54rem;
   font-style: normal;
+  letter-spacing: var(--ui-letter-spacing-tight);
+  text-align: center;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.assist-mark.is-visible {
+  visibility: visible;
+  border-color: rgba(225, 180, 95, 0.55);
+  background: rgba(62, 48, 22, 0.5);
 }
 
 .passive-grid {
@@ -870,7 +880,7 @@ h3,
 .readout-row {
   min-height: 27px;
   display: grid;
-  grid-template-columns: minmax(105px, 0.8fr) minmax(120px, 1.2fr) auto;
+  grid-template-columns: minmax(105px, 0.8fr) minmax(120px, 1.2fr) 48px;
   align-items: center;
   gap: 8px;
   padding: 4px 8px;
@@ -888,16 +898,30 @@ h3,
   font-weight: 400;
 }
 
-.readout-row i {
+.readout-focus {
+  justify-self: end;
+  min-width: 42px;
+  padding: 1px 3px;
+  border: 1px solid transparent;
+  visibility: hidden;
   color: var(--amber);
   font-size: 0.58rem;
   font-style: normal;
+  letter-spacing: var(--ui-letter-spacing-tight);
+  text-align: center;
+}
+
+.readout-focus.is-visible {
+  visibility: visible;
+  border-color: rgba(225, 180, 95, 0.55);
+  background: rgba(62, 48, 22, 0.5);
 }
 
 .readout-row.is-focused {
   background: rgba(225, 180, 95, 0.12);
   outline: 1px solid rgba(225, 180, 95, 0.48);
   outline-offset: -1px;
+  box-shadow: inset 3px 0 var(--amber);
 }
 
 .readout-divider {
@@ -1189,7 +1213,7 @@ h3,
   }
 
   .form-row {
-    grid-template-columns: 112px minmax(0, 1fr);
+    grid-template-columns: 112px minmax(0, 1fr) 42px;
   }
 
   .dossier-heading {
