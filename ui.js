@@ -155,24 +155,24 @@
       <section class="form-section">
         <h4>01 / DECLARATION</h4>
         <div class="form-columns">
-          <div>${declaration.slice(0, Math.ceil(declaration.length / 2)).map((item) => formRow(ship, item)).join("")}</div>
-          <div>${declaration.slice(Math.ceil(declaration.length / 2)).map((item) => formRow(ship, item)).join("")}</div>
+          <div class="form-stack">${declaration.slice(0, Math.ceil(declaration.length / 2)).map((item) => formRow(ship, item)).join("")}</div>
+          <div class="form-stack">${declaration.slice(Math.ceil(declaration.length / 2)).map((item) => formRow(ship, item)).join("")}</div>
         </div>
       </section>
       <section class="form-section">
         <h4>02 / ROUTE AND AUTHORITY</h4>
         <div class="form-columns">
-          <div>${route.slice(0, Math.ceil(route.length / 2)).map((item) => formRow(ship, item)).join("")}</div>
-          <div>${route.slice(Math.ceil(route.length / 2)).map((item) => formRow(ship, item)).join("")}</div>
+          <div class="form-stack">${route.slice(0, Math.ceil(route.length / 2)).map((item) => formRow(ship, item)).join("")}</div>
+          <div class="form-stack">${route.slice(Math.ceil(route.length / 2)).map((item) => formRow(ship, item)).join("")}</div>
         </div>
       </section>
       <section class="form-section">
         <h4>03 / CARGO AND LOAD RECORDS</h4>
-        ${cargo.map((item) => formRow(ship, item)).join("")}
+        <div class="form-stack">${cargo.map((item) => formRow(ship, item)).join("")}</div>
       </section>
       <section class="form-section">
         <h4>04 / SERVICE RECORD</h4>
-        ${service.map((item) => formRow(ship, item)).join("")}
+        <div class="form-stack">${service.map((item) => formRow(ship, item)).join("")}</div>
       </section>
     `;
   }
