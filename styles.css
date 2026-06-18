@@ -12,11 +12,18 @@
   --ink: #181b18;
   --line: #69705f;
   --shadow: rgba(0, 0, 0, 0.55);
-  --crt-cyan: rgba(72, 196, 255, 0.18);
-  --crt-red: rgba(255, 92, 92, 0.16);
+  --crt-cyan: rgba(72, 196, 255, 0.08);
+  --crt-red: rgba(255, 92, 92, 0.07);
   --crt-scanline: rgba(195, 255, 183, 0.055);
   --crt-glow: rgba(184, 227, 158, 0.33);
+  --crt-amber-glow: rgba(225, 180, 95, 0.34);
   --dossier-row-step: 26px;
+  --ui-font-family: "Lucida Console", "Consolas", monospace;
+  --ui-letter-spacing-tight: 0.055em;
+  --ui-letter-spacing-base: 0.075em;
+  --ui-letter-spacing-wide: 0.12em;
+  --ui-body-weight: 400;
+  --ui-heading-weight: 700;
 }
 
 * {
@@ -33,7 +40,8 @@ body {
   min-height: 100vh;
   overflow: hidden;
   color: var(--paper);
-  font-family: "Lucida Console", "Courier New", monospace;
+  font-family: var(--ui-font-family);
+  font-weight: var(--ui-body-weight);
   background:
     radial-gradient(circle at 50% -20%, rgba(116, 125, 98, 0.16), transparent 42%),
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.015) 0 1px, transparent 1px 8px),
@@ -92,9 +100,9 @@ button {
 
 .screen-frame :is(h1, h2, h3, h4, p, span, strong, small, em, b, i, li, button) {
   text-shadow:
-    -0.045em 0 0 var(--crt-red),
-    0.045em 0 0 var(--crt-cyan),
-    0 0 7px var(--crt-glow);
+    -0.025em 0 0 var(--crt-red),
+    0.025em 0 0 var(--crt-cyan),
+    0 0 6px var(--crt-glow);
   animation: crt-text-flicker 4.6s steps(1, end) infinite;
 }
 
@@ -102,7 +110,8 @@ button {
   min-height: 68px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  flex-wrap: wrap;
   gap: 18px;
   padding: 7px 11px;
   border: 1px solid #737866;
@@ -132,7 +141,7 @@ button {
   margin: 0;
   color: #a2a895;
   font-size: 0.68rem;
-  letter-spacing: 0.12em;
+  letter-spacing: var(--ui-letter-spacing-wide);
   text-transform: uppercase;
 }
 
@@ -148,26 +157,44 @@ h1 {
   margin-top: 3px;
   color: #e0e1d2;
   font-size: clamp(1.05rem, 2.4vw, 1.65rem);
-  letter-spacing: 0.06em;
+  letter-spacing: var(--ui-letter-spacing-base);
   text-transform: uppercase;
+  font-weight: var(--ui-heading-weight);
 }
 
 h2 {
   display: inline;
   font-size: 0.88rem;
-  letter-spacing: 0.09em;
+  letter-spacing: var(--ui-letter-spacing-wide);
   text-transform: uppercase;
+  font-weight: var(--ui-heading-weight);
 }
 
 h3 {
   font-size: 1.08rem;
-  letter-spacing: 0.07em;
+  letter-spacing: var(--ui-letter-spacing-base);
+  font-weight: var(--ui-heading-weight);
+}
+
+h1,
+h2,
+h3,
+.panel-code,
+.departure-clock,
+.status-card strong,
+.readout-divider,
+.overlay-card h2 {
+  text-shadow:
+    -0.02em 0 0 rgba(255, 154, 82, 0.09),
+    0.02em 0 0 rgba(255, 224, 145, 0.07),
+    0 0 9px var(--crt-amber-glow);
 }
 
 .status-strip {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
+  margin-left: auto;
   gap: 6px;
 }
 
@@ -185,6 +212,7 @@ h3 {
   color: #858b7a;
   font-size: 0.58rem;
   text-transform: uppercase;
+  letter-spacing: var(--ui-letter-spacing-tight);
 }
 
 .status-card strong {
@@ -252,6 +280,7 @@ h3 {
   background: var(--amber);
   font-size: 0.65rem;
   font-weight: 700;
+  letter-spacing: var(--ui-letter-spacing-tight);
 }
 
 .panel-toggle {
@@ -477,7 +506,7 @@ h3 {
   background: #171a16;
   color: #a8ad9c;
   font-size: 0.74rem;
-  line-height: 1.45;
+  line-height: 1.55;
 }
 
 .form-sheet {
@@ -528,7 +557,7 @@ h3 {
   padding: 0;
   border-bottom: 1px solid rgba(72, 84, 68, 0.16);
   font-size: 0.73rem;
-  line-height: 1.2;
+  line-height: 1.28;
 }
 
 .form-stack .form-row:last-child {
@@ -835,6 +864,7 @@ h3 {
     var(--screen);
   color: var(--phosphor);
   box-shadow: inset 0 0 18px #020603;
+  line-height: 1.45;
 }
 
 .readout-row {
@@ -846,6 +876,7 @@ h3 {
   padding: 4px 8px;
   border-bottom: 1px dotted #263b28;
   font-size: 0.68rem;
+  line-height: 1.4;
 }
 
 .readout-row span {
@@ -1023,6 +1054,7 @@ h3 {
   border-bottom: 1px dotted #273829;
   color: var(--phosphor);
   font-size: 0.65rem;
+  line-height: 1.45;
 }
 
 .log-entry span {
@@ -1134,6 +1166,7 @@ h3 {
 
   .status-strip {
     justify-content: flex-start;
+    margin-left: 0;
   }
 
   .passive-grid {
