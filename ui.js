@@ -19,7 +19,6 @@
     shipSummary: document.querySelector("#ship-summary"),
     shipDataBoard: document.querySelector("#ship-data-board"),
     actionGrid: document.querySelector("#action-grid"),
-    reportList: document.querySelector("#evidence-list"),
     selectedEvidenceText: document.querySelector("#selected-evidence-text"),
     focusStrip: document.querySelector("#focus-strip"),
     reportReadout: document.querySelector("#report-readout"),
@@ -27,6 +26,8 @@
     clearShip: document.querySelector("#clear-ship"),
     logCount: document.querySelector("#log-count"),
     logList: document.querySelector("#log-list"),
+    commsCount: document.querySelector("#comms-count"),
+    commsList: document.querySelector("#comms-list"),
     overlay: document.querySelector("#overlay"),
     overlayEyebrow: document.querySelector("#overlay-eyebrow"),
     overlayTitle: document.querySelector("#overlay-title"),
@@ -184,14 +185,29 @@
     els.actionGrid.innerHTML = config.scans.map((scan) => {
       const report = ship?.reports.find((item) => item.action === scan.id);
       const remaining = ship?.scansRunning[scan.id];
-      const disabled = !ship || state.mode !== "active" || report?.discovered || remaining || state.scanPower < scan.cost;
+      const isSelected = report?.id === state.selectedReportId;
+      const disabled = !ship || remaining || (!report?.discovered && (state.mode !== "active" || state.scanPower < scan.cost));
       const progress = remaining ? Math.round(((scan.duration - remaining) / scan.duration) * 100) : 0;
-      const stateClass = remaining ? "is-running" : report?.discovered ? "is-complete" : "";
+      const stateClass = [
+        remaining ? "is-running" : "",
+        report?.discovered ? "is-complete" : "",
+        report?.unread ? "is-unread" : "",
+        isSelected ? "is-selected" : ""
+      ].filter(Boolean).join(" ");
+      const status = remaining
+        ? `ACQUIRING ${remaining}s`
+        : isSelected
+          ? "RECORD OPEN"
+          : report?.unread
+            ? "UNREAD"
+            : report?.discovered
+              ? "OPEN RECORD"
+              : `PWR ${scan.cost}`;
       return `
         <button class="scan-button ${stateClass} ${essentialScans.has(scan.id) ? "" : "is-nonessential"}" data-scan="${scan.id}" style="--scan-progress: ${progress / 100}" ${disabled ? "disabled" : ""}>
           <span>${scan.label}</span>
           <small>${scan.description}${essentialScans.has(scan.id) ? "" : " / NONESSENTIAL THIS SHIFT"}</small>
-          <b>${remaining ? `ACQUIRING ${remaining}s` : report?.discovered ? "RECORD READY" : `PWR ${scan.cost}`}</b>
+          <b>${status}</b>
           ${remaining ? '<i class="scan-progress" aria-hidden="true"></i>' : ""}
         </button>
       `;
@@ -216,27 +232,12 @@
     const ship = engine.getShip();
     renderAssistStatus(ship);
     if (!ship) {
-      els.reportList.innerHTML = "";
       els.selectedEvidenceText.textContent = "NONE SELECTED";
       els.reportReadout.innerHTML = '<p class="empty-state">SELECT A COMPLETED RECORD</p>';
       els.allegationList.textContent = "NONE";
       els.clearShip.disabled = false;
       return;
     }
-
-    els.reportList.innerHTML = ship.reports.map((report) => {
-      const remaining = ship.scansRunning[report.action];
-      const status = report.discovered ? "READY" : remaining ? `${remaining}s` : "NO DATA";
-      return `<button class="report-tab ${report.id === state.selectedReportId ? "is-selected" : ""} ${report.unread ? "is-unread" : ""} ${report.discovered ? "is-complete" : ""}" data-report="${report.id}">${engine.scanConfig(report.action).label}<span>${status}</span></button>`;
-    }).join("");
-    els.reportList.querySelectorAll("[data-report]").forEach((button) => {
-      button.addEventListener("click", () => {
-        state.selectedReportId = button.dataset.report;
-        const report = ship.reports.find((item) => item.id === state.selectedReportId);
-        if (report?.discovered) report.unread = false;
-        render();
-      });
-    });
 
     const report = engine.getSelectedReport();
     els.selectedEvidenceText.textContent = report ? engine.scanConfig(report.action).label : "NONE SELECTED";
@@ -273,6 +274,23 @@
     `).join("");
   }
 
+  function renderComms() {
+    const { state } = engine;
+    els.commsCount.textContent = `${state.comms.length} ENTR${state.comms.length === 1 ? "Y" : "IES"}`;
+    els.commsList.innerHTML = state.comms.map((entry) => {
+      const label = entry.direction.toUpperCase();
+      const placeholder = entry.direction === "tx" ? "CARRIER OPEN" : "DECODING AUDIO";
+      const isPending = entry.status === "pending";
+      return `
+        <div class="comms-entry ${entry.direction} ${entry.tone} ${isPending ? "is-pending" : "is-complete"}">
+          <span class="comms-direction">${label}</span>
+          <strong>${entry.speaker}</strong>
+          <p>${isPending ? placeholder : entry.message}</p>
+        </div>
+      `;
+    }).join("");
+  }
+
   function renderPanels() {
     const { state } = engine;
     els.workspace.classList.toggle("rules-collapsed", state.collapsed.rules);
@@ -289,6 +307,8 @@
     renderShip();
     renderActions();
     renderReports();
+    renderLog();
+    renderComms();
     renderPanels();
   }
 
@@ -340,6 +360,7 @@
   namespace.ui = {
     render,
     renderLog,
+    renderComms,
     bindEvents,
     hideOverlay,
     showBriefing,

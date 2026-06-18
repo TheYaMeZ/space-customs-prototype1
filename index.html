@@ -61,14 +61,6 @@
         <div id="ship-data-board" class="form-sheet">
           <p class="empty-state">NO DOSSIER DATA</p>
         </div>
-
-        <section class="ops-log">
-          <div class="ops-log-header">
-            <div><span class="panel-code">LOG</span><h3>Ops Log</h3></div>
-            <span id="log-count">0 ENTRIES</span>
-          </div>
-          <div id="log-list" class="log-list"></div>
-        </section>
       </section>
 
       <aside id="systems-panel" class="panel side-panel systems-panel">
@@ -80,10 +72,9 @@
           <div id="action-grid" class="action-grid"></div>
 
           <div class="subhead">
-            <h3>Scan Records</h3>
+            <h3>Selected Record</h3>
             <span id="selected-evidence-text">NONE SELECTED</span>
           </div>
-          <div id="evidence-list" class="report-tabs"></div>
 
           <div class="readout-toolbar">
             <button id="assist-button" class="utility-button">FOCUS ASSIST</button>
@@ -103,6 +94,24 @@
           </div>
         </div>
       </aside>
+
+      <section class="bottom-dock">
+        <section class="ops-log telemetry-panel">
+          <div class="ops-log-header">
+            <div><span class="panel-code">LOG</span><h3>Ops Log</h3></div>
+            <span id="log-count">0 ENTRIES</span>
+          </div>
+          <div id="log-list" class="log-list"></div>
+        </section>
+
+        <section class="comms-log telemetry-panel">
+          <div class="ops-log-header">
+            <div><span class="panel-code">COM</span><h3>Lane Comms</h3></div>
+            <span id="comms-count">0 ENTRIES</span>
+          </div>
+          <div id="comms-list" class="log-list comms-list"></div>
+        </section>
+      </section>
     </main>
   </div>
 

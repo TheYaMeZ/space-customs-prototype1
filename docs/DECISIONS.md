@@ -100,11 +100,11 @@ This file records consequential choices that are easy to accidentally reverse. I
 
 ## D-013: The Ops Log Is Persistent Workstation Feedback
 
-**Decision:** Keep the Ops Log visible in the centre-bottom area rather than hiding it in a drawer.
+**Decision:** Keep the Ops Log visible in the bottom dock rather than hiding it in a drawer.
 
 **Why:** Ruling feedback and missed evidence are essential during prototype iteration.
 
-**Consequence:** The log receives roughly one quarter of the centre panel and scrolls independently from contact data.
+**Consequence:** The log receives the left half of the bottom dock and scrolls independently from contact data.
 
 ## D-014: The Interface Is Old, Heavy-Duty, and Information First
 
@@ -121,3 +121,11 @@ This file records consequential choices that are easy to accidentally reverse. I
 **Why:** If every violation requires a scanner, pre-scan reading becomes only a way to choose instruments. Manual rules make document inspection itself part of the core game.
 
 **Consequence:** Active-rule selection preserves a dossier/scan mix. Generator validation checks both evidence paths. Manual rules still need visible clues and benign false leads, and they must not collapse into single bad strings.
+
+## D-016: Lane Comms Is Transcript Flavor, Not Evidence
+
+**Decision:** Add Lane Comms as a clipped radio transcript for arrivals, scan requests, scan returns, and final lane instructions.
+
+**Why:** The bottom corners need useful presence, and radio traffic strengthens the fantasy of managing a live customs lane without adding another proof system.
+
+**Consequence:** Comms rows may animate transmission timing with `TX` and `RX` pending states, but they must not reveal hidden truth, recommend scanners, or provide correctness feedback. Ops Log remains the explicit audit and diagnostic channel.

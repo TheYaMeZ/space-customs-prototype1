@@ -67,7 +67,7 @@ Authoritative mutable game state and gameplay transitions:
 - Focus Assist activation and re-evaluation.
 - Evidence-linked allegation toggles.
 - Clear/detain resolution and diagnostic audit messages.
-- Ops Log history and shift statistics.
+- Ops Log history, Lane Comms history, and shift statistics.
 
 The engine may request a UI refresh, but it should not construct DOM markup.
 
@@ -78,7 +78,7 @@ DOM lookup, rendering, CSS-state application, and event binding:
 - Regulations, contact tabs, dossier forms, systems, and reports.
 - Focus Assist highlights.
 - Allegation controls and judgement buttons.
-- Ops Log and briefing/report overlays.
+- Ops Log, Lane Comms, and briefing/report overlays.
 - Collapsible side panels.
 
 The UI may derive presentation state from the engine. It must not inspect hidden truth to enable controls or reveal verdicts.
@@ -178,10 +178,12 @@ The singleton `SpaceCustoms.engine.state` owns:
 - Active regulation IDs.
 - Active regulation variants.
 - Traffic and selected ship/rule/report IDs.
-- Ops Log entries and resolved-contact count.
+- Ops Log entries, Lane Comms entries, and resolved-contact count.
 - Side-panel collapse state.
 
 Ship-specific scan, allegation, and assist state remains on each generated ship.
+
+Lane Comms entries are presentation state for non-proof radio transcript flavour. A pending entry reserves its row immediately with a `TX` or `RX` carrier indicator, then reveals its message after a short engine-tick delay. Comms must not inspect hidden violation truth or determine control availability.
 
 ## Important Invariants
 
@@ -196,6 +198,7 @@ Ship-specific scan, allegation, and assist state remains on each generated ship.
 - Detention succeeds only when alleged and actual violation sets match exactly.
 - Any unresolved departure counts as a miss and does not count as a resolved contact.
 - Focus Assist considers only evidence currently visible to the player.
+- Completed scan reports are opened from their scan button; the button state may show acquisition, unread, selected, or complete, but must not indicate whether the report proves a violation.
 
 ## Safe Extension Points
 

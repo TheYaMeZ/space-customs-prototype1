@@ -74,6 +74,8 @@ Contacts remain long enough to read, but unresolved ships eventually leave and c
 
 Current shifts last ten minutes. Four regulations are active, selected as a mix of dossier-confirmed and scan-confirmed rules. Up to four contacts may occupy the lane. Active systems take two to four seconds, consume a shared eight-point power reserve, and power regenerates over time.
 
+The bottom dock separates two kinds of feedback. Ops Log remains the explicit workstation/audit channel. Lane Comms is a clipped radio transcript for arrivals, scan requests, scan returns, clear/detain instructions, and lost contacts. Comms may reinforce timing and lane atmosphere, but it must not add proof, recommend scanners, or reveal correctness.
+
 ## Current Evidence Language
 
 The passive survey uses neutral anomaly categories:
@@ -108,6 +110,7 @@ Only active regulations may generate violations during a shift.
 - Do not encode guilt as a memorisable collection of special "bad strings."
 - Do not enable, colour, or label controls based on hidden correctness.
 - Do not let scanners or Focus Assist state the answer.
+- Do not let Comms become an evidence channel or hint system.
 - Do not fill the screen with independent cards when a compact technical form communicates the data better.
 - Do not add flavour records that have no gameplay relationship merely to make the dossier longer.
 - Do not expand into combat, progression, or narrative before the inspection loop is understood.
