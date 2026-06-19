@@ -472,8 +472,9 @@
       actualViolations: [...violations],
       benignHintRuleIds: [...benignHints],
       ruleEvidence: buildRuleEvidence(context),
-      assistActive: false,
-      assistMessage: null
+      aiValidationActive: false,
+      aiValidationMessage: null,
+      aiValidationHighlightKeys: []
     };
   }
 

@@ -20,7 +20,7 @@
         <div class="status-card"><span>Shift</span><strong id="shift-timer">600s</strong></div>
         <div class="status-card"><span>Credit</span><strong id="score">0</strong></div>
         <div class="status-card"><span>Miss</span><strong id="mistakes">0</strong></div>
-        <div class="status-card"><span>Focus</span><strong id="assists-left">3</strong></div>
+        <div class="status-card"><span>AI Cycles</span><strong id="ai-cycles-left">3</strong></div>
         <div class="status-card power-card">
           <span>Power</span>
           <strong id="scan-budget">8/8</strong>
@@ -37,6 +37,16 @@
         </div>
         <div class="panel-body">
           <div id="rules-list" class="rule-list"></div>
+          <div class="ruling-console">
+            <div class="selection-line">
+              <span>ALLEGED</span>
+              <div id="allegation-list" class="allegation-list"></div>
+            </div>
+            <div class="judgement-row">
+              <button id="clear-ship" class="clear-button">CLEAR</button>
+              <button id="detain-ship" class="detain-button">DETAIN</button>
+            </div>
+          </div>
         </div>
       </aside>
 
@@ -70,28 +80,6 @@
         </div>
         <div class="panel-body">
           <div id="action-grid" class="action-grid"></div>
-
-          <div class="subhead">
-            <h3>Selected Record</h3>
-            <span id="selected-evidence-text">NONE SELECTED</span>
-          </div>
-
-          <div class="readout-toolbar">
-            <button id="assist-button" class="utility-button">FOCUS ASSIST</button>
-          </div>
-          <div id="focus-strip" class="focus-strip hidden"></div>
-          <div id="report-readout" class="report-readout">
-            <p class="empty-state">SELECT A COMPLETED RECORD</p>
-          </div>
-
-          <div class="selection-line">
-            <span>ALLEGED</span>
-            <div id="allegation-list" class="allegation-list"></div>
-          </div>
-          <div class="judgement-row">
-            <button id="clear-ship" class="clear-button">CLEAR</button>
-            <button id="detain-ship" class="detain-button">DETAIN</button>
-          </div>
         </div>
       </aside>
 

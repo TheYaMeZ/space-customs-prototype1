@@ -58,13 +58,21 @@ This file records consequential choices that are easy to accidentally reverse. I
 
 **Consequence:** Generator validation enforces clue and confirming-report coverage. Legal ships may still contain benign leads to prevent clues becoming proof.
 
-## D-008: Focus Assist Finds Anomalies, Not Offences
+## D-008: AI Validation Finds Anomalies, Not Offences
 
-**Decision:** Focus Assist activates per ship, consumes one of three shift charges, persists for that ship, and highlights the strongest visible anomaly group.
+**Decision:** AI Validation is a legally bounded institutional AI action. It activates per ship, consumes one of three shift AI Cycles, persists for that ship, and highlights the strongest visible anomaly group.
 
 **Why:** Assistance should reduce search burden while preserving interpretation.
 
 **Consequence:** It does not name a rule, recommend a scanner, or declare a verdict. It re-evaluates as scan reports become visible, and a weak result still consumes the charge.
+
+## D-017: Scan Returns Belong to the Contact Dossier
+
+**Decision:** Completed active-system records remain visible in the Contact Dossier. Their system buttons open and navigate to those records rather than displaying evidence in a separate Active Systems readout.
+
+**Why:** Active Systems needs room for future controls, while the dossier is the natural durable record of all evidence gathered for a contact.
+
+**Consequence:** The Active Systems panel is an action bank. Allegations and final rulings remain with Regulations in an always-visible footer, keeping evidence, controls, and adjudication in distinct workstation areas.
 
 ## D-009: Allegations Are Evidence-Linked and Reversible
 

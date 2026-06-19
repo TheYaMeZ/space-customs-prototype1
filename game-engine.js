@@ -6,13 +6,13 @@
     timeLeft: config.shiftDuration,
     score: 0,
     mistakes: 0,
-    assistsLeft: config.assistCharges,
+    aiCyclesLeft: config.aiValidationCycles,
     scanPower: config.maxScanPower,
     powerRechargeIn: config.powerRechargeInterval,
     powerSpent: 0,
     powerRegenerated: 0,
     scansUsed: {},
-    focusUses: 0,
+    aiValidationsUsed: 0,
     activeRuleIds: [],
     ruleVariants: {},
     nextShipId: 1,
@@ -300,20 +300,20 @@
     refresh();
   }
 
-  function evaluateAssist(ship) {
-    if (!ship?.assistActive) return;
+  function evaluateAiValidation(ship) {
+    if (!ship?.aiValidationActive) return;
     const visible = generator.visibleAnomalies(ship)
       .filter((item) => packetReceived(ship) || item.key.startsWith("passive.") || item.key.startsWith("scan."));
     const strongest = visible.reduce((best, item) => item.anomalyScore > (best?.anomalyScore ?? -1) ? item : best, null);
 
-    if (!strongest || strongest.anomalyScore < config.assistThreshold) {
-      ship.assistHighlightKeys = [];
-      ship.assistMessage = "NO NOTABLE IRREGULARITY IN AVAILABLE DATA";
+    if (!strongest || strongest.anomalyScore < config.aiValidationThreshold) {
+      ship.aiValidationHighlightKeys = [];
+      ship.aiValidationMessage = "NO NOTABLE IRREGULARITY IN AVAILABLE DATA";
       return;
     }
 
     const isRecordCheck = !strongest.key.startsWith("passive.") && !strongest.key.startsWith("scan.");
-    ship.assistHighlightKeys = visible
+    ship.aiValidationHighlightKeys = visible
       .filter((item) => {
         const closeScore = item.anomalyScore >= strongest.anomalyScore - 12;
         if (!closeScore) return false;
@@ -324,29 +324,29 @@
     const category = strongest.key.startsWith("passive.") || strongest.key.startsWith("scan.")
       ? strongest.anomalyCategory
       : "RECORD CHECK";
-    ship.assistMessage = `PATTERN ISOLATED: ${category}`;
+    ship.aiValidationMessage = `PATTERN ISOLATED: ${category}`;
   }
 
-  function useAssist() {
+  function useAiValidation() {
     const ship = getShip();
     if (!ship) {
-      addLog("Focus Assist requires a selected contact.", "warn");
+      addLog("AI Validation requires a selected contact.", "warn");
       return;
     }
-    if (ship.assistActive) {
-      addLog(`Focus Assist is already active on ${ship.name}.`);
+    if (ship.aiValidationActive) {
+      addLog(`AI Validation is already active on ${ship.name}.`);
       return;
     }
-    if (state.assistsLeft <= 0) {
-      addLog("No Focus Assist cycles remain.", "warn");
+    if (state.aiCyclesLeft <= 0) {
+      addLog("No AI Validation cycles remain.", "warn");
       return;
     }
 
-    ship.assistActive = true;
-    state.assistsLeft -= 1;
-    state.focusUses += 1;
-    evaluateAssist(ship);
-    addLog(`${ship.name}: ${ship.assistMessage}.`);
+    ship.aiValidationActive = true;
+    state.aiCyclesLeft -= 1;
+    state.aiValidationsUsed += 1;
+    evaluateAiValidation(ship);
+    addLog(`${ship.name}: AI Validation: ${ship.aiValidationMessage}.`);
     refresh();
   }
 
@@ -358,14 +358,14 @@
         const report = ship.reports.find((item) => item.action === scanId);
         report.discovered = true;
         report.unread = state.selectedShipId !== ship.id || state.selectedReportId !== report.id;
-        evaluateAssist(ship);
+        evaluateAiValidation(ship);
         addLog(`${ship.name}: ${scanConfig(scanId).label} record available.`);
         addComms({
           direction: "rx",
           speaker: ship.name,
           message: commsResponses.scanReturn(ship, scanConfig(scanId))
         });
-        if (ship.assistActive) addLog(`${ship.name}: Assist re-analysis: ${ship.assistMessage}.`);
+        if (ship.aiValidationActive) addLog(`${ship.name}: AI re-analysis: ${ship.aiValidationMessage}.`);
       }
     });
   }
@@ -597,13 +597,13 @@
       timeLeft: config.shiftDuration,
       score: 0,
       mistakes: 0,
-      assistsLeft: config.assistCharges,
+      aiCyclesLeft: config.aiValidationCycles,
       scanPower: config.maxScanPower,
       powerRechargeIn: config.powerRechargeInterval,
       powerSpent: 0,
       powerRegenerated: 0,
       scansUsed: {},
-      focusUses: 0,
+      aiValidationsUsed: 0,
       activeRuleIds: [],
       ruleVariants: {},
       nextShipId: 1,
@@ -637,7 +637,7 @@
     addComms,
     spawnShip,
     startScan,
-    useAssist,
+    useAiValidation,
     hasConfirmingReport,
     toggleAllegation,
     resolveShip,
@@ -645,6 +645,6 @@
     startShift,
     endShift,
     reset,
-    evaluateAssist
+    evaluateAiValidation
   };
 })(window.SpaceCustoms = window.SpaceCustoms || {});

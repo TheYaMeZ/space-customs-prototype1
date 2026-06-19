@@ -52,9 +52,9 @@ After the relevant scan exists, the player may mark or remove an allegation. Mar
 
 Detention requires the allegations to exactly match the real active-rule violations. A clean ruling requires no allegations.
 
-### Bounded Assistance
+### Bounded AI Validation
 
-Focus Assist is an anomaly finder, not a rule tutor or automated inspector. It highlights the strongest currently visible irregularity and re-evaluates when new scan data arrives. It never names a regulation, recommends an active system, or declares compliance.
+AI Validation is a legally capability-capped institutional AI, kept below the cognition ceiling prohibited by the setting. It is an anomaly finder, not a rule tutor or automated inspector. It consumes a limited AI Cycle to highlight the strongest currently visible irregularity and re-evaluates when new scan data arrives. It never names a regulation, recommends an active system, or declares compliance.
 
 ### Useful Pressure
 
@@ -66,7 +66,7 @@ Contacts remain long enough to read, but unresolved ships eventually leave and c
 2. Monitor incoming contacts and their remaining lane time.
 3. Review passive readings immediately while waiting for the vessel declaration packet, then inspect declaration data, cargo paperwork, and lower-confidence irregularities once the packet arrives.
 4. Form a suspicion and run one or more active systems.
-5. Read the resulting raw scan record.
+5. Read the resulting raw scan record appended to the Contact Dossier.
 6. Mark any alleged active-rule violations whose evidence path is available: dossier rules are markable from the visible packet, while scan-confirmed rules require their report.
 7. Remove accidental or reconsidered allegations as needed.
 8. Clear a ship with no allegations, or detain it with the exact alleged violation set.
@@ -87,7 +87,7 @@ The passive survey uses neutral anomaly categories:
 
 These indicate that a broad sensor channel is unusual enough to inspect. They are not offences and should not map one-to-one to guilt.
 
-Dossier fields may still carry hidden irregularity scores for Focus Assist and generator validation, but dossier rows should not show category badges. Manual-rule play should come from reading and comparing records, not from spotting `DOC VAR` or other internal labels.
+Dossier fields may still carry hidden irregularity scores for AI Validation and generator validation, but dossier rows should not show category badges. Manual-rule play should come from reading and comparing records, not from spotting `DOC VAR` or other internal labels.
 
 Ship classes bias which violations are more common and define normal passive baselines. They must never hard-restrict a class to one kind of offence, and the UI should not explicitly teach a class lookup table.
 
@@ -109,7 +109,7 @@ Only active regulations may generate violations during a shift.
 - Do not make every available scanner mandatory for every ship.
 - Do not encode guilt as a memorisable collection of special "bad strings."
 - Do not enable, colour, or label controls based on hidden correctness.
-- Do not let scanners or Focus Assist state the answer.
+- Do not let scanners or AI Validation state the answer.
 - Do not let Comms become an evidence channel or hint system.
 - Do not fill the screen with independent cards when a compact technical form communicates the data better.
 - Do not add flavour records that have no gameplay relationship merely to make the dossier longer.
@@ -120,7 +120,7 @@ Only active regulations may generate violations during a shift.
 - Is the clue density sufficient for informed scanner choices without becoming obvious?
 - Are benign irregularities understandable false leads or merely noise?
 - Does having four active regulations create useful variety or excessive reference burden?
-- Is Focus Assist valuable enough to spend, while still withholding the answer?
+- Is AI Validation valuable enough to spend, while still withholding the answer?
 - Are time pressure, contact count, scan power, and recharge producing meaningful prioritisation?
 - Does exact-match detention feel fair when a ship carries multiple violations?
 - Which regulations or evidence relationships should be added in the next prototype?

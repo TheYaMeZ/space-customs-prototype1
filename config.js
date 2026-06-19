@@ -6,11 +6,11 @@
     maxContacts: 4,
     activeRuleCount: 4,
     activeRuleMix: { dossier: 2, scan: 2 },
-    assistCharges: 3,
+    aiValidationCycles: 3,
     maxScanPower: 8,
     powerRechargeInterval: 25,
     passiveTagThreshold: 42,
-    assistThreshold: 55,
+    aiValidationThreshold: 55,
     scans: [
       { id: "transponder", label: "ACTIVE PING", cost: 1, duration: 2, description: "Hull and registry interrogation" },
       { id: "cargo", label: "HOLD TOMOGRAPHY", cost: 2, duration: 4, description: "Bay contents and measured mass" },

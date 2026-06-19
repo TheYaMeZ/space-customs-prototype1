@@ -8,7 +8,7 @@
     shiftTimer: document.querySelector("#shift-timer"),
     score: document.querySelector("#score"),
     mistakes: document.querySelector("#mistakes"),
-    assists: document.querySelector("#assists-left"),
+    aiCycles: document.querySelector("#ai-cycles-left"),
     scanPower: document.querySelector("#scan-budget"),
     powerRecharge: document.querySelector("#power-recharge"),
     rulesList: document.querySelector("#rules-list"),
@@ -19,11 +19,9 @@
     shipSummary: document.querySelector("#ship-summary"),
     shipDataBoard: document.querySelector("#ship-data-board"),
     actionGrid: document.querySelector("#action-grid"),
-    selectedEvidenceText: document.querySelector("#selected-evidence-text"),
-    focusStrip: document.querySelector("#focus-strip"),
-    reportReadout: document.querySelector("#report-readout"),
     allegationList: document.querySelector("#allegation-list"),
     clearShip: document.querySelector("#clear-ship"),
+    detainShip: document.querySelector("#detain-ship"),
     logCount: document.querySelector("#log-count"),
     logList: document.querySelector("#log-list"),
     commsCount: document.querySelector("#comms-count"),
@@ -37,8 +35,8 @@
     overlayRestart: document.querySelector("#overlay-restart")
   };
 
-  function isAssisted(ship, item) {
-    return ship?.assistActive && ship.assistHighlightKeys?.includes(item.key);
+  function isAiTraced(ship, item) {
+    return ship?.aiValidationActive && ship.aiValidationHighlightKeys?.includes(item.key);
   }
 
   function anomalyTag(item) {
@@ -48,10 +46,10 @@
 
   function formRow(ship, item) {
     return `
-      <div class="form-row evidence-row ${isAssisted(ship, item) ? "is-focused" : ""}">
+      <div class="form-row evidence-row ${isAiTraced(ship, item) ? "is-ai-traced" : ""}">
         <span>${item.label}</span>
         <strong>${item.value}</strong>
-        <i class="assist-mark ${isAssisted(ship, item) ? "is-visible" : ""}" aria-hidden="true">FOCUS</i>
+        <i class="ai-trace-mark ${isAiTraced(ship, item) ? "is-visible" : ""}" aria-hidden="true">AI TRACE</i>
       </div>
     `;
   }
@@ -61,7 +59,7 @@
     els.shiftTimer.textContent = `${state.timeLeft}s`;
     els.score.textContent = state.score;
     els.mistakes.textContent = state.mistakes;
-    els.assists.textContent = state.assistsLeft;
+    els.aiCycles.textContent = state.aiCyclesLeft;
     els.scanPower.textContent = `${state.scanPower}/${config.maxScanPower}`;
     els.powerRecharge.textContent = state.scanPower >= config.maxScanPower ? "FULL" : `+1 IN ${state.powerRechargeIn}s`;
   }
@@ -124,6 +122,44 @@
     });
   }
 
+  function reportRows(ship, report) {
+    let currentGroup = null;
+    return report.lines.map((item) => {
+      const divider = item.group && item.group !== currentGroup
+        ? `<div class="readout-divider"><span>MODULE ${item.group}</span></div>`
+        : "";
+      currentGroup = item.group;
+      return `${divider}
+        <div class="readout-row ${isAiTraced(ship, item) ? "is-ai-traced" : ""}">
+          <span>${item.label}</span>
+          <strong>${item.value}</strong>
+          <i class="readout-ai-trace ${isAiTraced(ship, item) ? "is-visible" : ""}" aria-hidden="true">AI TRACE</i>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function activeReturnsSection(ship) {
+    const reports = ship.reports.filter((report) => report.discovered);
+    if (!reports.length) return "";
+    return `
+      <section class="form-section active-returns-section">
+        <h4>04 / ACTIVE SYSTEM RETURNS</h4>
+        <div class="active-returns">
+          ${reports.map((report) => `
+            <section class="scan-return ${report.id === engine.state.selectedReportId ? "is-selected" : ""}" data-report-id="${report.id}">
+              <header>
+                <strong>${engine.scanConfig(report.action).label}</strong>
+                <span>RECORD COMPLETE</span>
+              </header>
+              <div class="scan-return-readout">${reportRows(ship, report)}</div>
+            </section>
+          `).join("")}
+        </div>
+      </section>
+    `;
+  }
+
   function renderShip() {
     const ship = engine.getShip();
     renderTrafficTabs();
@@ -146,11 +182,11 @@
         <h4>00 / PASSIVE SURVEY</h4>
         <div class="passive-grid">
           ${ship.passiveSurvey.map((item) => `
-            <div class="passive-reading ${isAssisted(ship, item) ? "is-focused" : ""}">
+            <div class="passive-reading ${isAiTraced(ship, item) ? "is-ai-traced" : ""}">
               <span>${item.label}</span>
               <strong>${item.value}</strong>
               ${anomalyTag(item)}
-              ${isAssisted(ship, item) ? "<b>FOCUS</b>" : ""}
+              ${isAiTraced(ship, item) ? "<b>AI TRACE</b>" : ""}
             </div>
           `).join("")}
         </div>
@@ -164,6 +200,7 @@
           <h4>01 / DECLARATION PACKET</h4>
           <p>AWAITING VESSEL RESPONSE ON LANE COMMS</p>
         </section>
+        ${activeReturnsSection(ship)}
       `;
       return;
     }
@@ -171,7 +208,6 @@
     const declaration = ship.dossier.filter((item) => item.key.startsWith("declaration."));
     const route = ship.dossier.filter((item) => item.key.startsWith("route."));
     const cargo = ship.dossier.filter((item) => item.key.startsWith("manifest.") || item.key.startsWith("load."));
-    const service = ship.dossier.filter((item) => item.key.startsWith("service."));
     els.shipDataBoard.innerHTML = `
       ${passiveSection}
       <section class="form-section">
@@ -192,10 +228,7 @@
         <h4>03 / CARGO AND LOAD RECORDS</h4>
         <div class="form-stack">${cargo.map((item) => formRow(ship, item)).join("")}</div>
       </section>
-      <section class="form-section">
-        <h4>04 / SERVICE RECORD</h4>
-        <div class="form-stack">${service.map((item) => formRow(ship, item)).join("")}</div>
-      </section>
+      ${activeReturnsSection(ship)}
     `;
   }
 
@@ -203,7 +236,7 @@
     const { state } = engine;
     const ship = engine.getShip();
     const essentialScans = new Set(engine.activeRules().map((rule) => rule.confirmingScan).filter(Boolean));
-    els.actionGrid.innerHTML = config.scans.map((scan) => {
+    const scanButtons = config.scans.map((scan) => {
       const report = ship?.reports.find((item) => item.action === scan.id);
       const remaining = ship?.scansRunning[scan.id];
       const isSelected = report?.id === state.selectedReportId;
@@ -233,52 +266,39 @@
         </button>
       `;
     }).join("");
+    const aiDisabled = !ship || ship.aiValidationActive || state.aiCyclesLeft <= 0 || state.mode !== "active";
+    const aiStatus = ship?.aiValidationActive
+      ? "ACTIVE"
+      : state.aiCyclesLeft <= 0
+        ? "DEPLETED"
+        : "AI 1";
+    els.actionGrid.innerHTML = `${scanButtons}
+      <button class="scan-button ai-validation-button ${ship?.aiValidationActive ? "is-complete" : ""}" data-ai-validation ${aiDisabled ? "disabled" : ""}>
+        <span>AI VALIDATION</span>
+        <small>Bounded cognition anomaly pass</small>
+        <b>${aiStatus}</b>
+      </button>
+    `;
     els.actionGrid.querySelectorAll("[data-scan]").forEach((button) => {
-      button.addEventListener("click", () => engine.startScan(button.dataset.scan));
+      button.addEventListener("click", () => {
+        const scanId = button.dataset.scan;
+        engine.startScan(scanId);
+        const report = engine.getShip()?.reports.find((item) => item.action === scanId);
+        if (!report?.discovered) return;
+        requestAnimationFrame(() => {
+          document.querySelector(`[data-report-id="${report.id}"]`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        });
+      });
     });
+    els.actionGrid.querySelector("[data-ai-validation]").addEventListener("click", engine.useAiValidation);
   }
 
-  function renderAssistStatus(ship) {
-    if (!ship?.assistActive) {
-      els.focusStrip.classList.add("hidden");
-      els.focusStrip.textContent = "";
-      return;
-    }
-    els.focusStrip.classList.remove("hidden");
-    els.focusStrip.textContent = ship.assistMessage;
-  }
-
-  function renderReports() {
-    const { state } = engine;
+  function renderRulings() {
     const ship = engine.getShip();
-    renderAssistStatus(ship);
     if (!ship) {
-      els.selectedEvidenceText.textContent = "NONE SELECTED";
-      els.reportReadout.innerHTML = '<p class="empty-state">SELECT A COMPLETED RECORD</p>';
       els.allegationList.textContent = "NONE";
       els.clearShip.disabled = false;
       return;
-    }
-
-    const report = engine.getSelectedReport();
-    els.selectedEvidenceText.textContent = report ? engine.scanConfig(report.action).label : "NONE SELECTED";
-    if (!report?.discovered) {
-      els.reportReadout.innerHTML = `<p class="empty-state">${report ? "RECORD ACQUISITION INCOMPLETE" : "SELECT A COMPLETED RECORD"}</p>`;
-    } else {
-      let currentGroup = null;
-      els.reportReadout.innerHTML = report.lines.map((item) => {
-        const divider = item.group && item.group !== currentGroup
-          ? `<div class="readout-divider"><span>MODULE ${item.group}</span></div>`
-          : "";
-        currentGroup = item.group;
-        return `${divider}
-          <div class="readout-row ${isAssisted(ship, item) ? "is-focused" : ""}">
-            <span>${item.label}</span>
-            <strong>${item.value}</strong>
-            <i class="readout-focus ${isAssisted(ship, item) ? "is-visible" : ""}" aria-hidden="true">FOCUS</i>
-          </div>
-        `;
-      }).join("");
     }
 
     els.allegationList.innerHTML = ship.allegedViolationIds.length
@@ -326,7 +346,7 @@
     renderRules();
     renderShip();
     renderActions();
-    renderReports();
+    renderRulings();
     renderLog();
     renderComms();
     renderPanels();
@@ -357,7 +377,7 @@
     els.overlayTitle.textContent = state.score >= 110 ? "AUDIT: STRONG" : state.score >= 70 ? "AUDIT: ACCEPTABLE" : "AUDIT: DEFICIENT";
     els.overlaySummary.textContent =
       `Rules: ${engine.activeRules().map((rule) => rule.code).join(", ")}. ${state.resolvedShips} contacts resolved; ${state.mistakes} failures. ` +
-      `${state.powerSpent} power spent, ${state.powerRegenerated} regenerated. Focus used ${state.focusUses}. Scans: ${scanSummary}.`;
+      `${state.powerSpent} power spent, ${state.powerRegenerated} regenerated. AI validations ${state.aiValidationsUsed}. Scans: ${scanSummary}.`;
     els.overlayRules.innerHTML = "";
     els.overlayAction.classList.add("hidden");
     els.overlayRestart.classList.remove("hidden");
@@ -370,9 +390,8 @@
         renderPanels();
       });
     });
-    document.querySelector("#assist-button").addEventListener("click", engine.useAssist);
     els.clearShip.addEventListener("click", () => engine.resolveShip("clear"));
-    document.querySelector("#detain-ship").addEventListener("click", () => engine.resolveShip("detain"));
+    els.detainShip.addEventListener("click", () => engine.resolveShip("detain"));
     els.overlayAction.addEventListener("click", engine.startShift);
     els.overlayRestart.addEventListener("click", engine.reset);
   }

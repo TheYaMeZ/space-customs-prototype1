@@ -36,7 +36,7 @@ Balancing and system configuration:
 
 - Shift, spawn, and contact timing.
 - Scanner cost, duration, labels, and descriptions.
-- Power and Focus Assist limits.
+- Power and AI Validation limits.
 - Anomaly thresholds.
 - Per-class passive baselines and rule risk weights.
 - Active regulation evidence mix.
@@ -64,7 +64,7 @@ Authoritative mutable game state and gameplay transitions:
 - Shift lifecycle, spawning, departures, and scoring.
 - Scanner activation and completion.
 - Power regeneration.
-- Focus Assist activation and re-evaluation.
+- AI Validation activation and re-evaluation.
 - Evidence-linked allegation toggles.
 - Clear/detain resolution and diagnostic audit messages.
 - Ops Log history, Lane Comms history, and shift statistics.
@@ -76,8 +76,9 @@ The engine may request a UI refresh, but it should not construct DOM markup.
 DOM lookup, rendering, CSS-state application, and event binding:
 
 - Regulations, contact tabs, dossier forms, systems, and reports.
-- Focus Assist highlights.
+- AI Validation highlights.
 - Allegation controls and judgement buttons.
+- Persistent active-system returns in the Contact Dossier.
 - Ops Log, Lane Comms, and briefing/report overlays.
 - Collapsible side panels.
 
@@ -123,7 +124,7 @@ Minimal bootstrap:
 }
 ```
 
-- `key` is stable within a ship and supports Focus Assist highlighting.
+- `key` is stable within a ship and supports AI Validation highlighting.
 - `ruleIds` describes relevance, not guilt.
 - `anomalyScore` is hidden implementation metadata.
 - `anomalyCategory` may be presented as a neutral cue above the configured threshold for passive survey fields. Dossier categories are internal metadata and should not be rendered as badges.
@@ -162,13 +163,13 @@ Minimal bootstrap:
   actualViolations,
   benignHintRuleIds,
   ruleEvidence,
-  assistActive,
-  assistMessage,
-  assistHighlightKeys
+  aiValidationActive,
+  aiValidationMessage,
+  aiValidationHighlightKeys
 }
 ```
 
-`packetStatus` gates whether detailed dossier rows are currently visible. `assistHighlightKeys` is added when Focus Assist evaluates visible evidence. `actualViolations`, `benignHintRuleIds`, `ruleEvidence`, and anomaly scores are hidden state and must not directly drive normal UI verdicts.
+`packetStatus` gates whether detailed declaration rows are currently visible. Active-system returns remain visible in the dossier when discovered, including while a declaration packet is pending. `aiValidationHighlightKeys` is added when AI Validation evaluates visible evidence. `actualViolations`, `benignHintRuleIds`, `ruleEvidence`, and anomaly scores are hidden state and must not directly drive normal UI verdicts.
 
 ### Engine State
 
@@ -182,7 +183,7 @@ The singleton `SpaceCustoms.engine.state` owns:
 - Ops Log entries, Lane Comms entries, and resolved-contact count.
 - Side-panel collapse state.
 
-Ship-specific scan, allegation, and assist state remains on each generated ship.
+Ship-specific scan, allegation, and AI Validation state remains on each generated ship. The Regulations panel owns the always-visible ruling controls, while the Active Systems panel owns scan and AI Validation actions.
 
 Lane Comms entries are presentation state for non-proof radio transcript flavour. A scheduled entry can be inserted after a short delay, then reserves its row with a temporary `TX` or `RX` carrier label in the message area before revealing its transcript. Initial ship replies mark the declaration packet as received; Comms must not inspect hidden violation truth or otherwise determine correctness.
 
@@ -198,8 +199,8 @@ Lane Comms entries are presentation state for non-proof radio transcript flavour
 - A dossier-confirmed regulation is markable once a ship is selected and its declaration packet has been received.
 - Detention succeeds only when alleged and actual violation sets match exactly.
 - Any unresolved departure counts as a miss and does not count as a resolved contact.
-- Focus Assist considers only evidence currently visible to the player.
-- Completed scan reports are opened from their scan button; the button state may show acquisition, unread, selected, or complete, but must not indicate whether the report proves a violation.
+- AI Validation considers only evidence currently visible to the player.
+- Completed scan reports are opened from their scan button and displayed persistently in the Contact Dossier; the button state may show acquisition, unread, selected, or complete, but must not indicate whether the report proves a violation.
 
 ## Safe Extension Points
 

@@ -15,7 +15,7 @@ Before changing gameplay, presentation, or data generation, read:
 ## Core Invariants
 
 - The player should infer violations from plausible records; controls must not reveal whether an inference is correct.
-- Passive cues and Focus Assist may direct attention, but must not issue verdicts or prescribe a scanner.
+- Passive cues and AI Validation may direct attention, but must not issue verdicts or prescribe a scanner.
 - Every real violation must have a meaningful pre-scan clue and a confirming active-system report.
 - Clean ships may contain benign irregularities, so anomalies are reasons to investigate rather than proof.
 - Allegations are reversible and receive correctness feedback only when the ship is cleared, detained, or leaves unresolved.
@@ -54,4 +54,3 @@ console.log(result);
 if (!result.passed) process.exit(1);
 '@ | node -
 ```
-
