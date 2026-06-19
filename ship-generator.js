@@ -474,7 +474,8 @@
       ruleEvidence: buildRuleEvidence(context),
       aiValidationActive: false,
       aiValidationMessage: null,
-      aiValidationHighlightKeys: []
+      aiValidationHighlightKeys: [],
+      collapsedDossierSectionIds: []
     };
   }
 

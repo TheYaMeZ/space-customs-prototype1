@@ -68,11 +68,11 @@ This file records consequential choices that are easy to accidentally reverse. I
 
 ## D-017: Scan Returns Belong to the Contact Dossier
 
-**Decision:** Completed active-system records remain visible in the Contact Dossier. Their system buttons open and navigate to those records rather than displaying evidence in a separate Active Systems readout.
+**Decision:** Completed active-system records remain available as first-class, independently collapsible Contact Dossier sections. Their system buttons expand and navigate to those records rather than displaying evidence in a separate Active Systems readout.
 
 **Why:** Active Systems needs room for future controls, while the dossier is the natural durable record of all evidence gathered for a contact.
 
-**Consequence:** The Active Systems panel is an action bank. Allegations and final rulings remain with Regulations in an always-visible footer, keeping evidence, controls, and adjudication in distinct workstation areas.
+**Consequence:** Scan returns use the same label/value presentation as dossier paperwork. Dossier collapse state is remembered per contact but does not affect evidence availability or AI Validation. The Active Systems panel remains an action bank, while allegations and final rulings remain with Regulations in an always-visible footer.
 
 ## D-009: Allegations Are Evidence-Linked and Reversible
 

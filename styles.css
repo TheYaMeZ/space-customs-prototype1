@@ -182,7 +182,7 @@ h3,
 .panel-code,
 .departure-clock,
 .status-card strong,
-.readout-divider,
+.form-subhead,
 .overlay-card h2 {
   text-shadow:
     -0.02em 0 0 rgba(255, 154, 82, 0.09),
@@ -560,12 +560,67 @@ h3,
 }
 
 .form-section {
-  padding: 8px 11px 9px;
+  padding: 0;
   border-bottom: 1px dashed #354536;
 }
 
 .form-section:last-child {
   border-bottom: 0;
+}
+
+.dossier-section[data-report-id] {
+  scroll-margin-block: 8px;
+}
+
+.dossier-section.is-selected {
+  background: rgba(184, 227, 158, 0.035);
+  box-shadow: inset 4px 0 var(--phosphor), 0 0 10px rgba(184, 227, 158, 0.12);
+}
+
+.dossier-section-toggle {
+  width: 100%;
+  min-height: 31px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 11px 6px;
+  border: 0;
+  background: rgba(25, 37, 27, 0.52);
+  color: var(--amber);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-align: left;
+}
+
+.dossier-section-toggle:hover,
+.dossier-section-toggle:focus-visible {
+  background: rgba(65, 76, 57, 0.48);
+  outline: none;
+}
+
+.dossier-section-toggle:focus-visible {
+  box-shadow: inset 3px 0 var(--amber), inset 0 0 0 1px rgba(225, 180, 95, 0.42);
+}
+
+.dossier-section-toggle b {
+  flex: 0 0 auto;
+  color: var(--phosphor-dim);
+  font-size: 0.68rem;
+}
+
+.dossier-section.is-collapsed .dossier-section-toggle {
+  color: #a88c54;
+  background: rgba(17, 25, 18, 0.62);
+}
+
+.dossier-section-content {
+  padding: 6px 11px 9px;
+}
+
+.dossier-section-content[hidden] {
+  display: none;
 }
 
 .packet-pending {
@@ -579,13 +634,6 @@ h3,
   font-size: 0.78rem;
   letter-spacing: var(--ui-letter-spacing-tight);
   text-align: center;
-}
-
-.form-section h4 {
-  margin-bottom: 6px;
-  color: var(--amber);
-  font-size: 0.72rem;
-  letter-spacing: 0.1em;
 }
 
 .form-columns {
@@ -846,111 +894,19 @@ h3,
   filter: brightness(1.18);
 }
 
-.active-returns {
-  display: grid;
-  gap: 8px;
-}
-
-.scan-return {
-  scroll-margin-block: 8px;
-  border: 1px solid #405440;
-  background: #09110c;
-  transition: border-color 140ms ease, box-shadow 140ms ease;
-}
-
-.scan-return.is-selected {
-  border-color: var(--phosphor);
-  box-shadow: inset 4px 0 var(--phosphor), 0 0 10px rgba(184, 227, 158, 0.18);
-}
-
-.scan-return > header {
-  min-height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 5px 8px;
-  border-bottom: 1px solid #405440;
-  background: #172019;
-}
-
-.scan-return > header strong {
-  color: var(--amber);
-  font-size: 0.68rem;
-}
-
-.scan-return > header span {
-  color: var(--phosphor-dim);
-  font-size: 0.55rem;
-}
-
-.scan-return-readout {
-  background:
-    repeating-linear-gradient(180deg, rgba(147, 190, 127, 0.025) 0 1px, transparent 1px 3px),
-    var(--screen);
-  color: var(--phosphor);
-  box-shadow: inset 0 0 18px #020603;
-  line-height: 1.45;
-}
-
-.readout-row {
-  min-height: 27px;
-  display: grid;
-  grid-template-columns: minmax(105px, 0.8fr) minmax(120px, 1.2fr) 56px;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 8px;
-  border-bottom: 1px dotted #263b28;
-  font-size: 0.68rem;
-  line-height: 1.4;
-}
-
-.readout-row span {
-  color: var(--phosphor-dim);
-}
-
-.readout-row strong {
-  overflow-wrap: anywhere;
-  font-weight: 400;
-}
-
-.readout-ai-trace {
-  justify-self: end;
-  min-width: 52px;
-  padding: 1px 3px;
-  border: 1px solid transparent;
-  visibility: hidden;
-  color: var(--amber);
-  font-size: 0.58rem;
-  font-style: normal;
-  letter-spacing: var(--ui-letter-spacing-tight);
-  text-align: center;
-}
-
-.readout-ai-trace.is-visible {
-  visibility: visible;
-  border-color: rgba(225, 180, 95, 0.55);
-  background: rgba(62, 48, 22, 0.5);
-}
-
-.readout-row.is-ai-traced {
-  background: rgba(225, 180, 95, 0.12);
-  outline: 1px solid rgba(225, 180, 95, 0.48);
-  outline-offset: -1px;
-  box-shadow: inset 3px 0 var(--amber);
-}
-
-.readout-divider {
-  padding: 14px 8px 6px;
-  border-top: 2px solid #536b50;
+.form-subhead {
+  margin: 7px 0 2px;
+  padding: 5px 0 4px;
+  border-top: 1px solid #536b50;
+  border-bottom: 1px dotted #354536;
   background: linear-gradient(90deg, rgba(83, 107, 80, 0.18), transparent 72%);
   color: var(--amber);
   font-size: 0.63rem;
   letter-spacing: 0.1em;
 }
 
-.readout-divider:first-child {
-  padding-top: 8px;
+.form-subhead:first-child {
+  margin-top: 0;
   border-top: 0;
 }
 

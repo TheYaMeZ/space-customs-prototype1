@@ -165,11 +165,12 @@ Minimal bootstrap:
   ruleEvidence,
   aiValidationActive,
   aiValidationMessage,
-  aiValidationHighlightKeys
+  aiValidationHighlightKeys,
+  collapsedDossierSectionIds
 }
 ```
 
-`packetStatus` gates whether detailed declaration rows are currently visible. Active-system returns remain visible in the dossier when discovered, including while a declaration packet is pending. `aiValidationHighlightKeys` is added when AI Validation evaluates visible evidence. `actualViolations`, `benignHintRuleIds`, `ruleEvidence`, and anomaly scores are hidden state and must not directly drive normal UI verdicts.
+`packetStatus` gates whether detailed declaration rows are currently available. Active-system returns remain available in the dossier when discovered, including while a declaration packet is pending. `collapsedDossierSectionIds` stores per-contact presentation state and must not change evidence availability. `aiValidationHighlightKeys` is added when AI Validation evaluates available evidence. `actualViolations`, `benignHintRuleIds`, `ruleEvidence`, and anomaly scores are hidden state and must not directly drive normal UI verdicts.
 
 ### Engine State
 
@@ -199,8 +200,8 @@ Lane Comms entries are presentation state for non-proof radio transcript flavour
 - A dossier-confirmed regulation is markable once a ship is selected and its declaration packet has been received.
 - Detention succeeds only when alleged and actual violation sets match exactly.
 - Any unresolved departure counts as a miss and does not count as a resolved contact.
-- AI Validation considers only evidence currently visible to the player.
-- Completed scan reports are opened from their scan button and displayed persistently in the Contact Dossier; the button state may show acquisition, unread, selected, or complete, but must not indicate whether the report proves a violation.
+- AI Validation considers only evidence currently available to the player; collapsing a dossier section does not narrow its evaluation set.
+- Completed scan reports are opened from their scan button and displayed as independently collapsible Contact Dossier sections; the button state may show acquisition, unread, selected, or complete, but must not indicate whether the report proves a violation.
 
 ## Safe Extension Points
 

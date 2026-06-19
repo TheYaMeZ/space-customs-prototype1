@@ -1,5 +1,6 @@
 (function initUi(namespace) {
   const { data, config, engine } = namespace;
+  const presentedAiTraceKeys = new WeakMap();
 
   const els = {
     workspace: document.querySelector("#workspace"),
@@ -122,42 +123,100 @@
     });
   }
 
+  function dossierSection(ship, sectionId, heading, content, options = {}) {
+    const collapsed = ship.collapsedDossierSectionIds?.includes(sectionId) ?? false;
+    const contentId = `dossier-${ship.id}-${sectionId}`;
+    return `
+      <section class="form-section dossier-section ${collapsed ? "is-collapsed" : ""} ${options.selected ? "is-selected" : ""}" data-dossier-section="${sectionId}" ${options.reportId ? `data-report-id="${options.reportId}"` : ""}>
+        <button class="dossier-section-toggle" data-dossier-toggle="${sectionId}" aria-expanded="${!collapsed}" aria-controls="${contentId}">
+          <span>${heading}</span>
+          <b aria-hidden="true">[${collapsed ? "+" : "-"}]</b>
+        </button>
+        <div id="${contentId}" class="dossier-section-content ${options.contentClass ?? ""}" ${collapsed ? "hidden" : ""}>
+          ${content}
+        </div>
+      </section>
+    `;
+  }
+
   function reportRows(ship, report) {
     let currentGroup = null;
     return report.lines.map((item) => {
       const divider = item.group && item.group !== currentGroup
-        ? `<div class="readout-divider"><span>MODULE ${item.group}</span></div>`
+        ? `<div class="form-subhead"><span>MODULE ${item.group}</span></div>`
         : "";
       currentGroup = item.group;
-      return `${divider}
-        <div class="readout-row ${isAiTraced(ship, item) ? "is-ai-traced" : ""}">
-          <span>${item.label}</span>
-          <strong>${item.value}</strong>
-          <i class="readout-ai-trace ${isAiTraced(ship, item) ? "is-visible" : ""}" aria-hidden="true">AI TRACE</i>
-        </div>
-      `;
+      return `${divider}${formRow(ship, item)}`;
     }).join("");
   }
 
-  function activeReturnsSection(ship) {
-    const reports = ship.reports.filter((report) => report.discovered);
-    if (!reports.length) return "";
-    return `
-      <section class="form-section active-returns-section">
-        <h4>04 / ACTIVE SYSTEM RETURNS</h4>
-        <div class="active-returns">
-          ${reports.map((report) => `
-            <section class="scan-return ${report.id === engine.state.selectedReportId ? "is-selected" : ""}" data-report-id="${report.id}">
-              <header>
-                <strong>${engine.scanConfig(report.action).label}</strong>
-                <span>RECORD COMPLETE</span>
-              </header>
-              <div class="scan-return-readout">${reportRows(ship, report)}</div>
-            </section>
-          `).join("")}
-        </div>
-      </section>
-    `;
+  function activeReturnSections(ship) {
+    return ship.reports
+      .filter((report) => report.discovered)
+      .map((report) => {
+        const scanIndex = config.scans.findIndex((scan) => scan.id === report.action);
+        const sectionNumber = String(scanIndex + 4).padStart(2, "0");
+        const scan = engine.scanConfig(report.action);
+        return dossierSection(
+          ship,
+          `scan-${report.action}`,
+          `${sectionNumber} / ${scan.label} RETURN`,
+          `<div class="form-stack">${reportRows(ship, report)}</div>`,
+          { selected: report.id === engine.state.selectedReportId, reportId: report.id }
+        );
+      })
+      .join("");
+  }
+
+  function bindDossierSections(ship) {
+    els.shipDataBoard.querySelectorAll("[data-dossier-toggle]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const sectionId = button.dataset.dossierToggle;
+        const collapsedIds = ship.collapsedDossierSectionIds ??= [];
+        const collapsed = collapsedIds.includes(sectionId);
+        ship.collapsedDossierSectionIds = collapsed
+          ? collapsedIds.filter((id) => id !== sectionId)
+          : [...collapsedIds, sectionId];
+
+        const section = button.closest("[data-dossier-section]");
+        const content = section.querySelector(".dossier-section-content");
+        section.classList.toggle("is-collapsed", !collapsed);
+        content.hidden = !collapsed;
+        button.setAttribute("aria-expanded", String(collapsed));
+        button.querySelector("b").textContent = `[${collapsed ? "-" : "+"}]`;
+      });
+    });
+  }
+
+  function expandDossierSections(ship, sectionIds) {
+    if (!ship || !sectionIds.length) return;
+    const sectionSet = new Set(sectionIds);
+    ship.collapsedDossierSectionIds = (ship.collapsedDossierSectionIds ?? [])
+      .filter((sectionId) => !sectionSet.has(sectionId));
+  }
+
+  function sectionIdsForEvidence(ship, evidenceKeys) {
+    const sectionIds = new Set();
+    evidenceKeys.forEach((key) => {
+      if (ship.passiveSurvey.some((item) => item.key === key)) sectionIds.add("passive");
+      if (ship.dossier.some((item) => item.key === key)) {
+        if (key.startsWith("declaration.")) sectionIds.add("declaration");
+        if (key.startsWith("route.")) sectionIds.add("route");
+        if (key.startsWith("manifest.") || key.startsWith("load.")) sectionIds.add("cargo");
+      }
+      const report = ship.reports.find((item) => item.lines.some((line) => line.key === key));
+      if (report) sectionIds.add(`scan-${report.action}`);
+    });
+    return [...sectionIds];
+  }
+
+  function revealNewAiTraceSections(ship) {
+    const currentKeys = ship.aiValidationHighlightKeys ?? [];
+    const previousKeys = presentedAiTraceKeys.get(ship) ?? [];
+    const previousSet = new Set(previousKeys);
+    const newKeys = currentKeys.filter((key) => !previousSet.has(key));
+    expandDossierSections(ship, sectionIdsForEvidence(ship, newKeys));
+    presentedAiTraceKeys.set(ship, [...currentKeys]);
   }
 
   function renderShip() {
@@ -176,10 +235,9 @@
     els.shipSummary.textContent = ship.packetStatus === "pending"
       ? "Passive survey received. Waiting for vessel declaration packet over Lane Comms."
       : ship.pilotNote;
+    revealNewAiTraceSections(ship);
 
-    const passiveSection = `
-      <section class="form-section">
-        <h4>00 / PASSIVE SURVEY</h4>
+    const passiveSection = dossierSection(ship, "passive", "00 / PASSIVE SURVEY", `
         <div class="passive-grid">
           ${ship.passiveSurvey.map((item) => `
             <div class="passive-reading ${isAiTraced(ship, item) ? "is-ai-traced" : ""}">
@@ -190,18 +248,15 @@
             </div>
           `).join("")}
         </div>
-      </section>
-    `;
+    `);
 
     if (ship.packetStatus === "pending") {
       els.shipDataBoard.innerHTML = `
         ${passiveSection}
-        <section class="form-section packet-pending">
-          <h4>01 / DECLARATION PACKET</h4>
-          <p>AWAITING VESSEL RESPONSE ON LANE COMMS</p>
-        </section>
-        ${activeReturnsSection(ship)}
+        ${dossierSection(ship, "declaration", "01 / DECLARATION PACKET", "<p>AWAITING VESSEL RESPONSE ON LANE COMMS</p>", { contentClass: "packet-pending" })}
+        ${activeReturnSections(ship)}
       `;
+      bindDossierSections(ship);
       return;
     }
 
@@ -210,26 +265,24 @@
     const cargo = ship.dossier.filter((item) => item.key.startsWith("manifest.") || item.key.startsWith("load."));
     els.shipDataBoard.innerHTML = `
       ${passiveSection}
-      <section class="form-section">
-        <h4>01 / DECLARATION</h4>
+      ${dossierSection(ship, "declaration", "01 / DECLARATION", `
         <div class="form-columns">
           <div class="form-stack">${declaration.slice(0, Math.ceil(declaration.length / 2)).map((item) => formRow(ship, item)).join("")}</div>
           <div class="form-stack">${declaration.slice(Math.ceil(declaration.length / 2)).map((item) => formRow(ship, item)).join("")}</div>
         </div>
-      </section>
-      <section class="form-section">
-        <h4>02 / ROUTE AND AUTHORITY</h4>
+      `)}
+      ${dossierSection(ship, "route", "02 / ROUTE AND AUTHORITY", `
         <div class="form-columns">
           <div class="form-stack">${route.slice(0, Math.ceil(route.length / 2)).map((item) => formRow(ship, item)).join("")}</div>
           <div class="form-stack">${route.slice(Math.ceil(route.length / 2)).map((item) => formRow(ship, item)).join("")}</div>
         </div>
-      </section>
-      <section class="form-section">
-        <h4>03 / CARGO AND LOAD RECORDS</h4>
+      `)}
+      ${dossierSection(ship, "cargo", "03 / CARGO AND LOAD RECORDS", `
         <div class="form-stack">${cargo.map((item) => formRow(ship, item)).join("")}</div>
-      </section>
-      ${activeReturnsSection(ship)}
+      `)}
+      ${activeReturnSections(ship)}
     `;
+    bindDossierSections(ship);
   }
 
   function renderActions() {
@@ -282,6 +335,9 @@
     els.actionGrid.querySelectorAll("[data-scan]").forEach((button) => {
       button.addEventListener("click", () => {
         const scanId = button.dataset.scan;
+        const ship = engine.getShip();
+        const existingReport = ship?.reports.find((item) => item.action === scanId);
+        if (existingReport?.discovered) expandDossierSections(ship, [`scan-${scanId}`]);
         engine.startScan(scanId);
         const report = engine.getShip()?.reports.find((item) => item.action === scanId);
         if (!report?.discovered) return;
