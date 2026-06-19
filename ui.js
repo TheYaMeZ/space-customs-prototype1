@@ -80,13 +80,17 @@
       return `
         <div class="rule-row ${selected ? "is-selected" : ""} ${alleged ? "is-alleged" : ""}">
           <button class="rule-select" data-rule="${rule.id}">
-            <span>${rule.code}</span>
-            ${selected ? '<b class="selected-marker">SELECTED</b>' : ""}
+            <div class="rule-select-top">
+              <span>${rule.code}</span>
+              ${selected ? '<b class="selected-marker">SELECTED</b>' : ""}
+            </div>
             <strong>${rule.title}</strong>
             <small>${rule.criterion}</small>
-            <em>${evidenceLine}</em>
           </button>
-          <button class="rule-mark" data-allegation-rule="${rule.id}" ${canMark ? "" : "disabled"}>${alleged ? "REMOVE" : "MARK"}</button>
+          <div class="rule-row-footer">
+            <em>${evidenceLine}</em>
+            <button class="rule-mark" data-allegation-rule="${rule.id}" ${canMark ? "" : "disabled"}>${alleged ? "REMOVE" : "MARK"}</button>
+          </div>
         </div>
       `;
     }).join("");
