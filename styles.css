@@ -889,8 +889,8 @@ h3,
   text-align: center;
 }
 
-.clear-button:hover,
-.detain-button:hover {
+.clear-button:hover:not(:disabled),
+.detain-button:hover:not(:disabled) {
   filter: brightness(1.18);
 }
 
@@ -1008,10 +1008,16 @@ h3,
   color: #d5e9c9;
 }
 
-.clear-button:disabled {
-  opacity: 0.38;
+.clear-button:disabled,
+.detain-button:disabled {
+  border-color: #45493e;
+  border-bottom-width: 1px;
+  background: linear-gradient(#30332c, #272a24);
+  color: #777c6e;
+  opacity: 0.55;
   filter: none;
-  cursor: default;
+  cursor: not-allowed;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.22);
 }
 
 .detain-button {

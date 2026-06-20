@@ -353,14 +353,17 @@
     const ship = engine.getShip();
     if (!ship) {
       els.allegationList.textContent = "NONE";
-      els.clearShip.disabled = false;
+      els.clearShip.disabled = true;
+      els.detainShip.disabled = true;
       return;
     }
 
+    const hasAllegations = ship.allegedViolationIds.length > 0;
     els.allegationList.innerHTML = ship.allegedViolationIds.length
       ? ship.allegedViolationIds.map((ruleId) => `<span>${data.rules.find((rule) => rule.id === ruleId).code}</span>`).join("")
       : "NONE";
-    els.clearShip.disabled = ship.allegedViolationIds.length > 0;
+    els.clearShip.disabled = hasAllegations;
+    els.detainShip.disabled = !hasAllegations;
   }
 
   function renderLog() {
