@@ -24,6 +24,7 @@ Later scripts depend on interfaces created by earlier scripts.
 Static content and domain definitions:
 
 - Regulations and their confirming scanners.
+- Authored postings, shift briefings, lesson guarantees, and scripted-contact variants.
 - Ship classes, cargo pools, route/location data, registry authorities, and operator licences.
 - Name pools, contractors, manufacturers, module families, and recall policies.
 - Restricted and military-specific domain values.
@@ -40,6 +41,7 @@ Balancing and system configuration:
 - Anomaly thresholds.
 - Per-class passive baselines and rule risk weights.
 - Active regulation evidence mix.
+- Campaign timing, qualification thresholds, contact-count ranges, and shift traffic profiles.
 - Shared randomisation utilities under `SpaceCustoms.utils`.
 
 Values that change difficulty or probability belong here rather than in rendering code.
@@ -48,12 +50,13 @@ Values that change difficulty or probability belong here rather than in renderin
 
 Procedural vessel construction:
 
-- Selects class-biased active-rule violations.
+- Selects class-biased enforced-rule violations or applies authored generation constraints.
 - Selects active regulations with a dossier/scan evidence mix.
 - Adds benign irregularities to some legal ships.
 - Builds passive surveys, dossiers, modules, registry IDs, ship names, and scan reports.
 - Guarantees meaningful clues and either dossier evidence or confirming scan evidence.
 - Exposes generator validation for large-sample invariant checks.
+- Builds 7-9-contact campaign attempt plans containing lesson guarantees, a scripted contact, and random fillers.
 
 Hidden anomaly metadata is generated here but is not ordinarily rendered as a score.
 
@@ -61,7 +64,7 @@ Hidden anomaly metadata is generated here but is not ordinarily rendered as a sc
 
 Authoritative mutable game state and gameplay transitions:
 
-- Shift lifecycle, spawning, departures, and scoring.
+- Campaign, shift-attempt, spawning, departure, qualification, retry, and advancement lifecycles.
 - Scanner activation and completion.
 - Power regeneration.
 - AI Validation activation and re-evaluation.
@@ -89,7 +92,7 @@ The UI may derive presentation state from the engine. It must not inspect hidden
 Minimal bootstrap:
 
 - Bind events.
-- Reset the engine into briefing mode.
+- Initialize the authored campaign, or random development mode when `?mode=random` is present.
 - Run generator validation in the development console.
 - Start the one-second engine tick.
 
@@ -103,12 +106,42 @@ Minimal bootstrap:
   code,
   title,
   criterion,
+  shortCriterion,
   confirmingScan,
   evidenceType
 }
 ```
 
 `confirmingScan` references a scanner ID from `config.scans` for scan-confirmed rules. Dossier-confirmed rules use `confirmingScan: null` and `evidenceType: "dossier"`; these are markable as soon as a ship is selected.
+
+Standing Order versus Active Regulation is not stored on this definition. Campaign state and the current shift definition provide that context, allowing a rule such as `CAR-19` to be promoted without duplication.
+
+### Campaign Shift
+
+```js
+{
+  id,
+  title,
+  briefing,
+  activeRegulationIds,
+  introducedStandingOrderIds,
+  authorizedScanIds,
+  aiValidationAvailable,
+  lessonGuarantees,
+  scriptedContact,
+  consequenceCopy
+}
+```
+
+Static authored content belongs in `data.postings`; numerical traffic and qualification balance belongs in `config.campaign`.
+
+### Generation Request
+
+```js
+generateShip({ shipId, enforcedRuleIds, ruleVariants, trafficProfile, constraints })
+```
+
+`constraints` may force exact violations, benign hints, domain selections, or authored identity. These values are hidden generation inputs and must not become presentation cues.
 
 ### Evidence Field
 

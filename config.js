@@ -11,6 +11,35 @@
     powerRechargeInterval: 25,
     passiveTagThreshold: 42,
     aiValidationThreshold: 55,
+    campaign: {
+      standingOrderLimit: 5,
+      shiftDuration: 360,
+      finalSpawnCutoff: 90,
+      contactCount: [7, 9],
+      contactSpawn: [32, 44],
+      emptyLaneSpawnDelay: 3,
+      qualification: { minimumRulings: 6, qualifiedAccuracy: 0.75, commendedAccuracy: 0.9 },
+      shiftProfiles: {
+        "freight-certification": {
+          strict: true,
+          shipClassNames: ["Light Freighter", "Courier"],
+          routeProfiles: ["civil freight", "bonded freight", "civil courier", "bonded packet"],
+          cargoIds: ["hab-glass", "medical-textiles", "drive-components", "archive-racks", "legal-containers"]
+        },
+        "licence-review": {
+          strict: true,
+          shipClassNames: ["Light Freighter", "Courier"],
+          routeProfiles: ["civil freight", "bonded freight", "civil courier", "bonded packet"],
+          cargoIds: ["bio-tanks", "drive-components", "coolant-canisters", "medical-textiles"]
+        },
+        "habitat-supply-audit": {
+          strict: false,
+          shipClassWeights: { "Light Freighter": 50, Courier: 20, "Colony Shuttle": 20, "Salvage Skiff": 5, Prospector: 5 },
+          cargoIds: ["coolant-canisters", "mineral-slurry", "medical-stores", "filter-stacks", "fabricator-units", "hab-modules", "bio-tanks"],
+          destinationKinds: ["habitat"]
+        }
+      }
+    },
     scans: [
       { id: "transponder", label: "ACTIVE PING", cost: 1, duration: 2, description: "Hull and registry interrogation" },
       { id: "cargo", label: "HOLD TOMOGRAPHY", cost: 2, duration: 4, description: "Bay contents and measured mass" },

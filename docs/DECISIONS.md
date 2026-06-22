@@ -137,3 +137,27 @@ This file records consequential choices that are easy to accidentally reverse. I
 **Why:** The bottom corners need useful presence, and radio traffic strengthens the fantasy of managing a live customs lane without adding another proof system.
 
 **Consequence:** Comms rows may animate transmission timing with `TX` and `RX` pending states, including delayed vessel replies. They must not reveal hidden truth, recommend scanners, provide correctness feedback, or duplicate non-radio departure notices. Ops Log remains the explicit audit and diagnostic channel.
+
+## D-018: The Default Prototype Uses An Authored Posting Campaign
+
+**Decision:** Replace the isolated random shift as the default with a linear three-shift J4 Freight Annex posting. Keep random shifts behind `?mode=random` for development.
+
+**Why:** Authored shifts can teach evidence relationships deliberately and test whether learned inspection practice survives increasing rule load.
+
+**Consequence:** Campaign state survives shift resets but not page refresh. Deficient shifts retry with regenerated traffic; qualified shifts advance through a combined audit and briefing handoff.
+
+## D-019: Standing Orders Are Contextual Persistent Rules
+
+**Decision:** Standing Orders use the same evidence, allegation, and exact-match adjudication as Active Regulations, but persist after authored introduction. Rule definitions do not store a permanent category.
+
+**Why:** A posting-specific rule may become baseline practice without duplicating its law or evidence implementation.
+
+**Consequence:** The enforced set is the union of campaign Standing Orders and current Active Regulations. The panel presents compact Standing Order rows separately from full Active Regulation rows.
+
+## D-020: Campaign Qualification Uses Accuracy And Throughput
+
+**Decision:** A Freight Annex shift requires six rulings, 75% final accuracy, and a correct ruling on the named Greywake audit shipment. Unresolved cutoff contacts count as incorrect; 90% earns a non-mechanical commendation.
+
+**Why:** Advancement should require both sound judgment and traffic processing, while a guaranteed authored contact ensures the focal lesson was handled correctly.
+
+**Consequence:** Campaign shifts last six minutes, stop arrivals for the final 90 seconds, and repeat on deficiency. Live status shows rulings and completed-contact accuracy instead of score and misses.

@@ -38,7 +38,7 @@ $files = 'data.js','config.js','ship-generator.js','game-engine.js','ui.js','app
 foreach ($file in $files) { node --check $file; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } }
 ```
 
-Run generator validation when changing rules, clues, scans, classes, or ship generation:
+Run generator validation when changing rules, clues, scans, classes, ship generation, campaign traffic profiles, lesson guarantees, or scripted contacts. The validator covers both random shifts and authored campaign plans:
 
 ```powershell
 @'

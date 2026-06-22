@@ -7,8 +7,8 @@
     rulesPanel: document.querySelector("#rules-panel"),
     systemsPanel: document.querySelector("#systems-panel"),
     shiftTimer: document.querySelector("#shift-timer"),
-    score: document.querySelector("#score"),
-    mistakes: document.querySelector("#mistakes"),
+    rulingsIssued: document.querySelector("#rulings-issued"),
+    auditAccuracy: document.querySelector("#audit-accuracy"),
     aiCycles: document.querySelector("#ai-cycles-left"),
     scanPower: document.querySelector("#scan-budget"),
     powerRecharge: document.querySelector("#power-recharge"),
@@ -58,8 +58,10 @@
   function renderStatus() {
     const { state } = engine;
     els.shiftTimer.textContent = `${state.timeLeft}s`;
-    els.score.textContent = state.score;
-    els.mistakes.textContent = state.mistakes;
+    const minimumRulings = state.campaign.mode === "campaign" ? config.campaign.qualification.minimumRulings : "--";
+    els.rulingsIssued.textContent = state.campaign.mode === "campaign" ? `${state.rulingsIssued}/${minimumRulings}` : state.resolvedShips;
+    const accuracy = engine.currentAccuracy();
+    els.auditAccuracy.textContent = accuracy === null ? "--" : `${Math.round(accuracy * 100)}%`;
     els.aiCycles.textContent = state.aiCyclesLeft;
     els.scanPower.textContent = `${state.scanPower}/${config.maxScanPower}`;
     els.powerRecharge.textContent = state.scanPower >= config.maxScanPower ? "FULL" : `+1 IN ${state.powerRechargeIn}s`;
@@ -67,9 +69,8 @@
 
   function renderRules() {
     const { state } = engine;
-    const rules = engine.activeRules();
     const ship = engine.getShip();
-    els.rulesList.innerHTML = rules.map((rule) => {
+    const fullRuleRow = (rule) => {
       const selected = state.selectedRuleId === rule.id;
       const alleged = ship?.allegedViolationIds.includes(rule.id);
       const canMark = engine.hasConfirmingReport(ship, rule.id);
@@ -92,7 +93,26 @@
           </div>
         </div>
       `;
-    }).join("");
+    };
+    const compactOrderRow = (rule) => {
+      const alleged = ship?.allegedViolationIds.includes(rule.id);
+      const canMark = engine.hasConfirmingReport(ship, rule.id);
+      return `
+        <div class="standing-order-row ${alleged ? "is-alleged" : ""}">
+          <b>${rule.code}</b>
+          <span>${rule.shortCriterion ?? rule.criterion}</span>
+          <button class="rule-mark standing-order-mark" data-allegation-rule="${rule.id}" ${canMark ? "" : "disabled"}>${alleged ? "REMOVE" : "MARK"}</button>
+        </div>
+      `;
+    };
+    const standing = engine.standingOrders();
+    const regulations = engine.activeRegulations();
+    els.rulesList.innerHTML = `
+      <div class="rule-group-label">STANDING ORDERS</div>
+      ${standing.length ? standing.map(compactOrderRow).join("") : '<p class="rule-group-empty">NONE ISSUED</p>'}
+      <div class="rule-group-label">ACTIVE REGULATIONS</div>
+      ${regulations.length ? regulations.map(fullRuleRow).join("") : '<p class="rule-group-empty">NONE ACTIVE</p>'}
+    `;
     els.rulesList.querySelectorAll("[data-rule]").forEach((button) => {
       button.addEventListener("click", () => {
         state.selectedRuleId = button.dataset.rule;
@@ -290,10 +310,11 @@
     const ship = engine.getShip();
     const essentialScans = new Set(engine.activeRules().map((rule) => rule.confirmingScan).filter(Boolean));
     const scanButtons = config.scans.map((scan) => {
+      const authorized = engine.isScanAuthorized(scan.id);
       const report = ship?.reports.find((item) => item.action === scan.id);
       const remaining = ship?.scansRunning[scan.id];
       const isSelected = report?.id === state.selectedReportId;
-      const disabled = !ship || remaining || (!report?.discovered && (state.mode !== "active" || state.scanPower < scan.cost));
+      const disabled = !authorized || !ship || remaining || (!report?.discovered && (state.mode !== "active" || state.scanPower < scan.cost));
       const progress = remaining ? Math.round(((scan.duration - remaining) / scan.duration) * 100) : 0;
       const stateClass = [
         remaining ? "is-running" : "",
@@ -301,7 +322,9 @@
         report?.unread ? "is-unread" : "",
         isSelected ? "is-selected" : ""
       ].filter(Boolean).join(" ");
-      const status = remaining
+      const status = !authorized
+        ? "AUTH LOCK"
+        : remaining
         ? `ACQUIRING ${remaining}s`
         : isSelected
           ? "RECORD OPEN"
@@ -311,24 +334,27 @@
               ? "OPEN RECORD"
               : `PWR ${scan.cost}`;
       return `
-        <button class="scan-button ${stateClass} ${essentialScans.has(scan.id) ? "" : "is-nonessential"}" data-scan="${scan.id}" style="--scan-progress: ${progress / 100}" ${disabled ? "disabled" : ""}>
+        <button class="scan-button ${stateClass} ${authorized ? "" : "is-locked"} ${essentialScans.has(scan.id) ? "" : "is-nonessential"}" data-scan="${scan.id}" style="--scan-progress: ${progress / 100}" ${disabled ? "disabled" : ""}>
           <span>${scan.label}</span>
-          <small>${scan.description}${essentialScans.has(scan.id) ? "" : " / NONESSENTIAL THIS SHIFT"}</small>
+          <small>${scan.description}${authorized ? essentialScans.has(scan.id) ? "" : " / NONESSENTIAL THIS SHIFT" : " / NOT AUTHORIZED"}</small>
           <b>${status}</b>
           ${remaining ? '<i class="scan-progress" aria-hidden="true"></i>' : ""}
         </button>
       `;
     }).join("");
-    const aiDisabled = !ship || ship.aiValidationActive || state.aiCyclesLeft <= 0 || state.mode !== "active";
-    const aiStatus = ship?.aiValidationActive
+    const aiAuthorized = engine.isAiValidationAuthorized();
+    const aiDisabled = !aiAuthorized || !ship || ship.aiValidationActive || state.aiCyclesLeft <= 0 || state.mode !== "active";
+    const aiStatus = !aiAuthorized
+      ? "AUTH LOCK"
+      : ship?.aiValidationActive
       ? "ACTIVE"
       : state.aiCyclesLeft <= 0
         ? "DEPLETED"
         : "AI 1";
     els.actionGrid.innerHTML = `${scanButtons}
-      <button class="scan-button ai-validation-button ${ship?.aiValidationActive ? "is-complete" : ""}" data-ai-validation ${aiDisabled ? "disabled" : ""}>
+      <button class="scan-button ai-validation-button ${!aiAuthorized ? "is-locked" : ""} ${ship?.aiValidationActive ? "is-complete" : ""}" data-ai-validation ${aiDisabled ? "disabled" : ""}>
         <span>AI VALIDATION</span>
-        <small>Bounded cognition anomaly pass</small>
+        <small>Bounded cognition anomaly pass${aiAuthorized ? "" : " / NOT AUTHORIZED"}</small>
         <b>${aiStatus}</b>
       </button>
     `;
@@ -416,14 +442,21 @@
   }
 
   function showBriefing() {
+    const shift = engine.currentShiftDefinition();
     els.overlay.classList.remove("hidden");
-    els.overlayEyebrow.textContent = "PRE-SHIFT BRIEFING";
-    els.overlayTitle.textContent = "OBSERVE. FORM A SUSPICION. ACQUIRE PROOF.";
-    els.overlaySummary.textContent =
+    els.overlayEyebrow.textContent = engine.state.campaign.mode === "campaign" ? "J4 FREIGHT ANNEX / PRE-SHIFT" : "PRE-SHIFT BRIEFING";
+    els.overlayTitle.textContent = shift?.title ?? "OBSERVE. FORM A SUSPICION. ACQUIRE PROOF.";
+    els.overlaySummary.textContent = shift?.briefing ??
       `${config.activeRuleCount} regulations are active. Vessel class, passive readings, and paperwork can suggest where closer inspection may pay off. A cue is not proof.`;
-    els.overlayRules.innerHTML = engine.activeRules().map((rule) => `
-      <li><strong>${rule.code}</strong> ${rule.criterion}<br>${rule.evidenceType === "dossier" ? "Evidence in dossier." : `Confirm with ${engine.scanConfig(rule.confirmingScan).label}.`}</li>
-    `).join("");
+    const standingItems = engine.standingOrders().map((rule) => `<li><strong>STANDING / ${rule.code}</strong> ${rule.criterion}</li>`);
+    const regulationItems = engine.activeRegulations().map((rule) => `
+      <li><strong>ACTIVE / ${rule.code}</strong> ${rule.criterion}<br>${rule.evidenceType === "dossier" ? "Evidence in dossier." : `Confirm with ${engine.scanConfig(rule.confirmingScan).label}.`}</li>
+    `);
+    const qualification = engine.state.campaign.mode === "campaign"
+      ? [`<li><strong>QUALIFICATION</strong> Issue at least ${config.campaign.qualification.minimumRulings} rulings, maintain ${Math.round(config.campaign.qualification.qualifiedAccuracy * 100)}% accuracy, and rule correctly on the Greywake audit shipment.</li>`, `<li><strong>AUTHORIZED</strong> HOLD TOMOGRAPHY only. Other systems remain locked.</li>`]
+      : [];
+    els.overlayRules.innerHTML = [...standingItems, ...regulationItems, ...qualification].join("");
+    els.overlayAction.textContent = "BEGIN SHIFT";
     els.overlayAction.classList.remove("hidden");
     els.overlayRestart.classList.add("hidden");
   }
@@ -438,8 +471,43 @@
       `Rules: ${engine.activeRules().map((rule) => rule.code).join(", ")}. ${state.resolvedShips} contacts resolved; ${state.mistakes} failures. ` +
       `${state.powerSpent} power spent, ${state.powerRegenerated} regenerated. AI validations ${state.aiValidationsUsed}. Scans: ${scanSummary}.`;
     els.overlayRules.innerHTML = "";
-    els.overlayAction.classList.add("hidden");
-    els.overlayRestart.classList.remove("hidden");
+    els.overlayAction.textContent = "RUN ANOTHER SHIFT";
+    els.overlayAction.classList.remove("hidden");
+    els.overlayRestart.classList.add("hidden");
+  }
+
+  function resultSummary(result) {
+    const percent = Math.round(result.accuracy * 100);
+    return `${result.rulingsIssued} rulings; ${percent}% final accuracy. ${result.correctContacts} correct, ${result.incorrectContacts} incorrect, ${result.unresolvedAtCutoff} unresolved at cutoff.`;
+  }
+
+  function showIntershift(result) {
+    const shift = engine.currentShiftDefinition();
+    const passed = result.passed;
+    const nextShift = passed ? engine.currentPosting().shifts[engine.state.campaign.shiftIndex + 1] : shift;
+    const consequence = shift.consequenceCopy[result.grade];
+    els.overlay.classList.remove("hidden");
+    els.overlayEyebrow.textContent = `SHIFT AUDIT / ${result.grade.toUpperCase()}`;
+    els.overlayTitle.textContent = passed ? nextShift.title : `${shift.title} / RETRY REQUIRED`;
+    els.overlaySummary.textContent = `${resultSummary(result)} ${consequence} ${passed ? nextShift.briefing : shift.briefing}`;
+    const reasons = result.reasons.map((reason) => `<li><strong>DEFICIENCY</strong> ${reason}</li>`);
+    const nextRules = nextShift.activeRegulationIds.map((ruleId) => data.rules.find((rule) => rule.id === ruleId)).map((rule) => `<li><strong>NEXT / ${rule.code}</strong> ${rule.criterion}</li>`);
+    els.overlayRules.innerHTML = [...reasons, ...nextRules].join("");
+    els.overlayAction.textContent = passed ? "BEGIN NEXT SHIFT" : "RETRY SHIFT";
+    els.overlayAction.classList.remove("hidden");
+    els.overlayRestart.classList.add("hidden");
+  }
+
+  function showCampaignComplete(result) {
+    const posting = engine.currentPosting();
+    els.overlay.classList.remove("hidden");
+    els.overlayEyebrow.textContent = `POSTING COMPLETE / ${result.grade.toUpperCase()}`;
+    els.overlayTitle.textContent = "J4 FREIGHT QUALIFICATION GRANTED";
+    els.overlaySummary.textContent = `${resultSummary(result)} ${engine.currentShiftDefinition().consequenceCopy[result.grade]} ${posting.completionCopy}`;
+    els.overlayRules.innerHTML = '<li><strong>NEW STANDING ORDER / CAR-19</strong> Cargo declaration accuracy is now standing practice.</li>';
+    els.overlayAction.textContent = "RESTART CAMPAIGN";
+    els.overlayAction.classList.remove("hidden");
+    els.overlayRestart.classList.add("hidden");
   }
 
   function bindEvents() {
@@ -451,8 +519,8 @@
     });
     els.clearShip.addEventListener("click", () => engine.resolveShip("clear"));
     els.detainShip.addEventListener("click", () => engine.resolveShip("detain"));
-    els.overlayAction.addEventListener("click", engine.startShift);
-    els.overlayRestart.addEventListener("click", engine.reset);
+    els.overlayAction.addEventListener("click", engine.continueFromOverlay);
+    els.overlayRestart.addEventListener("click", engine.continueFromOverlay);
   }
 
   namespace.ui = {
@@ -462,6 +530,8 @@
     bindEvents,
     hideOverlay,
     showBriefing,
-    showShiftReport
+    showShiftReport,
+    showIntershift,
+    showCampaignComplete
   };
 })(window.SpaceCustoms = window.SpaceCustoms || {});

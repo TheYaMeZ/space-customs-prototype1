@@ -3,6 +3,14 @@
 
   const state = {
     mode: "briefing",
+    campaign: {
+      mode: "campaign",
+      postingIndex: 0,
+      shiftIndex: 0,
+      attemptNumber: 1,
+      introducedStandingOrderIds: [],
+      completedShiftResults: []
+    },
     timeLeft: config.shiftDuration,
     score: 0,
     mistakes: 0,
@@ -14,6 +22,8 @@
     scansUsed: {},
     aiValidationsUsed: 0,
     activeRuleIds: [],
+    activeRegulationIds: [],
+    standingOrderIds: [],
     ruleVariants: {},
     nextShipId: 1,
     nextSpawnAt: config.shiftDuration - 10,
@@ -26,6 +36,18 @@
     scheduledComms: [],
     commsClock: 0,
     resolvedShips: 0,
+    plannedContacts: 0,
+    spawnedContacts: 0,
+    rulingsIssued: 0,
+    correctContacts: 0,
+    incorrectContacts: 0,
+    departedContacts: 0,
+    unresolvedAtCutoff: 0,
+    scriptedContactResolved: false,
+    scriptedContactCorrect: false,
+    attemptPlan: [],
+    nextPlanIndex: 0,
+    lastShiftResult: null,
     collapsed: { rules: false, systems: false }
   };
 
@@ -33,12 +55,45 @@
     namespace.ui?.render();
   }
 
-  function activeRules() {
-    return state.activeRuleIds.map((ruleId) => {
+  function rulesForIds(ruleIds) {
+    return ruleIds.map((ruleId) => {
       const rule = data.rules.find((item) => item.id === ruleId);
       const variant = state.ruleVariants[ruleId];
       return variant ? { ...rule, criterion: variant.criterion ?? rule.criterion, activeVariant: variant } : rule;
-    });
+    }).filter(Boolean);
+  }
+
+  function activeRules() {
+    return rulesForIds(state.activeRuleIds);
+  }
+
+  function standingOrders() {
+    return rulesForIds(state.standingOrderIds);
+  }
+
+  function activeRegulations() {
+    return rulesForIds(state.activeRegulationIds);
+  }
+
+  function currentPosting() {
+    return data.postings[state.campaign.postingIndex] ?? null;
+  }
+
+  function currentShiftDefinition() {
+    return currentPosting()?.shifts[state.campaign.shiftIndex] ?? null;
+  }
+
+  function currentTrafficProfile() {
+    const shift = currentShiftDefinition();
+    return shift ? config.campaign.shiftProfiles[shift.id] : {};
+  }
+
+  function isScanAuthorized(scanId) {
+    return state.campaign.mode === "random" || currentShiftDefinition()?.authorizedScanIds.includes(scanId);
+  }
+
+  function isAiValidationAuthorized() {
+    return state.campaign.mode === "random" || Boolean(currentShiftDefinition()?.aiValidationAvailable);
   }
 
   function scanConfig(scanId) {
@@ -234,14 +289,38 @@
   }
 
   function scheduleNextSpawn() {
-    state.nextSpawnAt = state.timeLeft - utils.randInt(config.contactSpawn[0], config.contactSpawn[1]);
+    const range = state.campaign.mode === "campaign" ? config.campaign.contactSpawn : config.contactSpawn;
+    state.nextSpawnAt = state.timeLeft - utils.randInt(range[0], range[1]);
+  }
+
+  function accelerateNextSpawn() {
+    if (state.campaign.mode !== "campaign" || state.traffic.length || state.nextPlanIndex >= state.attemptPlan.length) return;
+    state.nextSpawnAt = Math.max(state.nextSpawnAt, state.timeLeft - config.campaign.emptyLaneSpawnDelay);
   }
 
   function spawnShip() {
     if (state.mode !== "active" || state.traffic.length >= config.maxContacts) return;
-    const ship = generator.generateShip(state.activeRuleIds, state.nextShipId++, state.ruleVariants);
+    let ship;
+    if (state.campaign.mode === "campaign") {
+      if (state.timeLeft <= config.campaign.finalSpawnCutoff || state.nextPlanIndex >= state.attemptPlan.length) return;
+      const slot = state.attemptPlan[state.nextPlanIndex++];
+      ship = generator.generateShip({
+        shipId: state.nextShipId++,
+        enforcedRuleIds: state.activeRuleIds,
+        ruleVariants: state.ruleVariants,
+        trafficProfile: currentTrafficProfile(),
+        constraints: slot.constraints
+      });
+    } else {
+      ship = generator.generateShip({
+        shipId: state.nextShipId++,
+        enforcedRuleIds: state.activeRuleIds,
+        ruleVariants: state.ruleVariants
+      });
+    }
     ship.packetStatus = "pending";
     state.traffic.push(ship);
+    state.spawnedContacts += 1;
     state.selectedShipId ??= ship.id;
     addLog(`${ship.name} entered lane control. Passive survey acquired; declaration packet requested.`);
     addComms({
@@ -265,6 +344,10 @@
     const scan = scanConfig(scanId);
     if (!ship || !scan || state.mode !== "active") {
       addLog("Select an active contact before committing scan power.", "warn");
+      return;
+    }
+    if (!isScanAuthorized(scanId)) {
+      addLog(`${scan.label}: system not authorized for this posting.`, "warn");
       return;
     }
 
@@ -331,6 +414,10 @@
     const ship = getShip();
     if (!ship) {
       addLog("AI Validation requires a selected contact.", "warn");
+      return;
+    }
+    if (!isAiValidationAuthorized()) {
+      addLog("AI Validation is not authorized for this posting.", "warn");
       return;
     }
     if (ship.aiValidationActive) {
@@ -507,11 +594,13 @@
       return;
     }
     state.resolvedShips += 1;
+    state.rulingsIssued += 1;
     const correct = decision === "clear"
       ? ship.actualViolations.length === 0
       : ship.actualViolations.length > 0 && setsMatch(ship.allegedViolationIds, ship.actualViolations);
 
     if (correct) {
+      state.correctContacts += 1;
       state.score += decision === "clear" ? 12 : 18;
       const detail = decision === "clear"
         ? "No active-rule violations present."
@@ -529,6 +618,7 @@
         delay: 1
       });
     } else {
+      state.incorrectContacts += 1;
       state.mistakes += 1;
       state.score = Math.max(0, state.score - 10);
       addLog(`${ship.name}: ${auditFailureMessage(ship, decision)}`, "alert");
@@ -539,9 +629,15 @@
       });
     }
 
+    if (ship.isScriptedContact) {
+      state.scriptedContactResolved = true;
+      state.scriptedContactCorrect = correct;
+    }
+
     state.traffic = state.traffic.filter((item) => item.id !== ship.id);
     state.selectedShipId = state.traffic[0]?.id ?? null;
     state.selectedReportId = null;
+    accelerateNextSpawn();
     refresh();
   }
 
@@ -556,6 +652,8 @@
     departed.forEach((ship) => {
       state.traffic = state.traffic.filter((item) => item.id !== ship.id);
       state.mistakes += 1;
+      state.incorrectContacts += 1;
+      state.departedContacts += 1;
       state.score = Math.max(0, state.score - 12);
       if (ship.actualViolations.length) {
         addLog(`${ship.name} departed. Missed: ${ship.actualViolations.map((ruleId) => missedViolationDetail(ship, ruleId)).join(" | ")}`, "alert");
@@ -564,6 +662,7 @@
       }
     });
     if (!getShip()) state.selectedShipId = state.traffic[0]?.id ?? null;
+    accelerateNextSpawn();
   }
 
   function tick() {
@@ -573,31 +672,46 @@
     tickComms();
     tickPowerRecharge();
     handleDepartures();
-    if (state.timeLeft > 24 && state.timeLeft <= state.nextSpawnAt) spawnShip();
-    if (state.timeLeft <= 0) endShift();
+    const spawnCutoff = state.campaign.mode === "campaign" ? config.campaign.finalSpawnCutoff : 24;
+    if (state.timeLeft > spawnCutoff && state.timeLeft <= state.nextSpawnAt) spawnShip();
+    if (state.timeLeft <= 0) finishShift();
     else refresh();
   }
 
   function startShift() {
     state.mode = "active";
     namespace.ui.hideOverlay();
-    addLog(`Shift active. Regulations: ${activeRules().map((rule) => rule.code).join(", ")}.`);
+    addLog(`Shift active. Enforced rules: ${activeRules().map((rule) => rule.code).join(", ")}.`);
     spawnShip();
   }
 
-  function endShift() {
-    state.mode = "report";
-    namespace.ui.showShiftReport();
-    refresh();
+  function currentAccuracy() {
+    const completed = state.correctContacts + state.incorrectContacts;
+    return completed ? state.correctContacts / completed : null;
   }
 
-  function reset() {
+  function evaluateQualification(stats, policy = config.campaign.qualification) {
+    const completed = stats.correctContacts + stats.incorrectContacts;
+    const accuracy = completed ? stats.correctContacts / completed : 0;
+    const reasons = [];
+    if (stats.rulingsIssued < policy.minimumRulings) reasons.push(`fewer than ${policy.minimumRulings} rulings`);
+    if (accuracy < policy.qualifiedAccuracy) reasons.push(`accuracy below ${Math.round(policy.qualifiedAccuracy * 100)}%`);
+    if (!stats.scriptedContactResolved || !stats.scriptedContactCorrect) reasons.push("Greywake audit shipment not ruled correctly");
+    return {
+      passed: reasons.length === 0,
+      grade: reasons.length ? "deficient" : accuracy >= policy.commendedAccuracy ? "commended" : "qualified",
+      accuracy,
+      reasons
+    };
+  }
+
+  function resetAttemptState(duration) {
     Object.assign(state, {
       mode: "briefing",
-      timeLeft: config.shiftDuration,
+      timeLeft: duration,
       score: 0,
       mistakes: 0,
-      aiCyclesLeft: config.aiValidationCycles,
+      aiCyclesLeft: state.campaign.mode === "campaign" && !currentShiftDefinition()?.aiValidationAvailable ? 0 : config.aiValidationCycles,
       scanPower: config.maxScanPower,
       powerRechargeIn: config.powerRechargeInterval,
       powerSpent: 0,
@@ -605,9 +719,11 @@
       scansUsed: {},
       aiValidationsUsed: 0,
       activeRuleIds: [],
+      activeRegulationIds: [],
+      standingOrderIds: [],
       ruleVariants: {},
       nextShipId: 1,
-      nextSpawnAt: config.shiftDuration - 10,
+      nextSpawnAt: duration - 10,
       traffic: [],
       selectedShipId: null,
       selectedRuleId: null,
@@ -617,19 +733,155 @@
       scheduledComms: [],
       commsClock: 0,
       resolvedShips: 0,
-      collapsed: { rules: false, systems: false }
+      plannedContacts: 0,
+      spawnedContacts: 0,
+      rulingsIssued: 0,
+      correctContacts: 0,
+      incorrectContacts: 0,
+      departedContacts: 0,
+      unresolvedAtCutoff: 0,
+      scriptedContactResolved: false,
+      scriptedContactCorrect: false,
+      attemptPlan: [],
+      nextPlanIndex: 0,
+      lastShiftResult: null
     });
-    state.activeRuleIds = generator.selectActiveRuleIds();
+  }
+
+  function prepareShiftAttempt(showBriefing = true) {
+    const shift = currentShiftDefinition();
+    resetAttemptState(config.campaign.shiftDuration);
+    shift.introducedStandingOrderIds.forEach((ruleId) => {
+      if (!state.campaign.introducedStandingOrderIds.includes(ruleId)) state.campaign.introducedStandingOrderIds.push(ruleId);
+    });
+    state.standingOrderIds = [...state.campaign.introducedStandingOrderIds];
+    state.activeRegulationIds = [...shift.activeRegulationIds];
+    state.activeRuleIds = [...new Set([...state.standingOrderIds, ...state.activeRegulationIds])];
     state.ruleVariants = generator.selectRuleVariants(state.activeRuleIds);
-    scheduleNextSpawn();
-    addLog("Workstation initialised. Awaiting shift authority.");
+    state.attemptPlan = generator.createAttemptPlan(shift, currentTrafficProfile());
+    state.plannedContacts = state.attemptPlan.length;
+    addLog(`J4 Freight Annex / ${shift.title}. Awaiting shift authority.`);
+    if (showBriefing) namespace.ui?.showBriefing();
+    refresh();
+  }
+
+  function initializeCampaign() {
+    state.campaign = {
+      mode: "campaign",
+      postingIndex: 0,
+      shiftIndex: 0,
+      attemptNumber: 1,
+      introducedStandingOrderIds: [...data.postings[0].initialStandingOrderIds],
+      completedShiftResults: []
+    };
+    state.collapsed = { rules: false, systems: false };
+    prepareShiftAttempt(true);
+  }
+
+  function initializeRandomShift() {
+    state.campaign = {
+      mode: "random",
+      postingIndex: 0,
+      shiftIndex: 0,
+      attemptNumber: 1,
+      introducedStandingOrderIds: [],
+      completedShiftResults: []
+    };
+    resetAttemptState(config.shiftDuration);
+    state.activeRuleIds = generator.selectActiveRuleIds();
+    state.activeRegulationIds = [...state.activeRuleIds];
+    state.ruleVariants = generator.selectRuleVariants(state.activeRuleIds);
+    addLog("Random inspection shift initialised. Awaiting shift authority.");
     namespace.ui?.showBriefing();
     refresh();
+  }
+
+  function finishShift() {
+    if (state.mode !== "active") return;
+    if (state.campaign.mode === "random") {
+      state.mode = "intershift";
+      namespace.ui.showShiftReport();
+      refresh();
+      return;
+    }
+
+    state.traffic.forEach((ship) => {
+      state.incorrectContacts += 1;
+      state.unresolvedAtCutoff += 1;
+      state.mistakes += 1;
+      if (ship.isScriptedContact) state.scriptedContactResolved = false;
+    });
+    state.traffic = [];
+    state.selectedShipId = null;
+    state.selectedReportId = null;
+    state.scheduledComms = [];
+    const qualification = evaluateQualification(state);
+    const shift = currentShiftDefinition();
+    const result = {
+      shiftId: shift.id,
+      attemptNumber: state.campaign.attemptNumber,
+      grade: qualification.grade,
+      passed: qualification.passed,
+      accuracy: qualification.accuracy,
+      reasons: qualification.reasons,
+      plannedContacts: state.plannedContacts,
+      spawnedContacts: state.spawnedContacts,
+      rulingsIssued: state.rulingsIssued,
+      correctContacts: state.correctContacts,
+      incorrectContacts: state.incorrectContacts,
+      departedContacts: state.departedContacts,
+      unresolvedAtCutoff: state.unresolvedAtCutoff,
+      scriptedContactCorrect: state.scriptedContactCorrect
+    };
+    state.lastShiftResult = result;
+    state.campaign.completedShiftResults.push(result);
+
+    const isFinalShift = state.campaign.shiftIndex === currentPosting().shifts.length - 1;
+    if (result.passed && isFinalShift) {
+      currentPosting().completionStandingOrderIds.forEach((ruleId) => {
+        if (!state.campaign.introducedStandingOrderIds.includes(ruleId)) state.campaign.introducedStandingOrderIds.push(ruleId);
+      });
+      state.standingOrderIds = [...state.campaign.introducedStandingOrderIds];
+      state.mode = "campaign-complete";
+      namespace.ui.showCampaignComplete(result);
+    } else {
+      state.mode = "intershift";
+      namespace.ui.showIntershift(result);
+    }
+    refresh();
+  }
+
+  function retryShift() {
+    state.campaign.attemptNumber += 1;
+    prepareShiftAttempt(false);
+    startShift();
+  }
+
+  function advanceShift() {
+    state.campaign.shiftIndex += 1;
+    state.campaign.attemptNumber = 1;
+    prepareShiftAttempt(false);
+    startShift();
+  }
+
+  function continueFromOverlay() {
+    if (state.mode === "briefing") return startShift();
+    if (state.mode === "campaign-complete") return initializeCampaign();
+    if (state.mode !== "intershift") return;
+    if (state.campaign.mode === "random") return initializeRandomShift();
+    return state.lastShiftResult?.passed ? advanceShift() : retryShift();
   }
 
   namespace.engine = {
     state,
     activeRules,
+    standingOrders,
+    activeRegulations,
+    currentPosting,
+    currentShiftDefinition,
+    currentAccuracy,
+    isScanAuthorized,
+    isAiValidationAuthorized,
     scanConfig,
     getShip,
     getSelectedReport,
@@ -643,8 +895,15 @@
     resolveShip,
     tick,
     startShift,
-    endShift,
-    reset,
+    finishShift,
+    evaluateQualification,
+    initializeCampaign,
+    initializeRandomShift,
+    prepareShiftAttempt,
+    retryShift,
+    advanceShift,
+    continueFromOverlay,
+    reset: initializeCampaign,
     evaluateAiValidation
   };
 })(window.SpaceCustoms = window.SpaceCustoms || {});

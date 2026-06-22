@@ -2,6 +2,15 @@
   namespace.data = {
     rules: [
       {
+        id: "commercial-service-authority",
+        code: "LIC-01",
+        title: "Commercial service authority",
+        criterion: "Vessels declaring bonded freight, civil freight, or frontier freight service require operator licence scope FREIGHT.",
+        shortCriterion: "FREIGHT routes require FREIGHT operator scope.",
+        confirmingScan: null,
+        evidenceType: "dossier"
+      },
+      {
         id: "military-registry",
         code: "REG-12",
         title: "Restricted hull authority",
@@ -50,6 +59,7 @@
         code: "CAR-19",
         title: "Cargo declaration accuracy",
         criterion: "Measured cargo must remain within +/- 2.0 tonnes and match the seal ledger.",
+        shortCriterion: "Cargo must remain within +/- 2.0 t and match seals.",
         confirmingScan: "cargo",
         evidenceType: "scan"
       },
@@ -380,6 +390,100 @@
       "Crew repeats that route endorsement was issued at departure.",
       "Pilot says a yard recall notice was closed before launch.",
       "Manifest officer asks whether habitat containment codes are still required this shift."
+    ],
+    postings: [
+      {
+        id: "j4-freight-annex",
+        title: "J4 Freight Annex",
+        dutyStation: "J4 FREIGHT ANNEX",
+        theme: "Civil freight qualification",
+        initialStandingOrderIds: ["commercial-service-authority"],
+        completionStandingOrderIds: ["manifest-match"],
+        completionCopy: "Freight Annex posting complete. Await next duty-station assignment.",
+        shifts: [
+          {
+            id: "freight-certification",
+            title: "Freight Desk Certification",
+            briefing: "Supervised freight-desk certification is active. Ledger variance reports are elevated across civil and bonded consignments. Apply standing service authority and current cargo-accuracy controls. Greywake Trade is the designated audit shipment and must receive a correct ruling.",
+            activeRegulationIds: ["manifest-match"],
+            introducedStandingOrderIds: [],
+            authorizedScanIds: ["cargo"],
+            aiValidationAvailable: false,
+            lessonGuarantees: [
+              { ruleId: "commercial-service-authority", kind: "violation" },
+              { ruleId: "commercial-service-authority", kind: "benign" },
+              { ruleId: "manifest-match", kind: "violation" },
+              { ruleId: "manifest-match", kind: "benign" }
+            ],
+            scriptedContact: {
+              name: "Grey Ledger 41",
+              shipClassName: "Light Freighter",
+              operatorId: "greywake",
+              routeProfile: "civil freight",
+              cargoId: "hab-glass",
+              variants: [[], ["commercial-service-authority"], ["manifest-match"]]
+            },
+            consequenceCopy: {
+              deficient: "Freight-desk certification withheld. Repeat duty period under audit observation.",
+              qualified: "Freight-desk procedure accepted. Authority extended to controlled cargo review.",
+              commended: "Freight-desk procedure exceeds qualification standard. Authority extended to controlled cargo review."
+            }
+          },
+          {
+            id: "licence-review",
+            title: "Licence Review",
+            briefing: "Prior ledger findings have opened an operator-scope review. Hazardous and weapons-adjacent consignments require particular attention. Greywake Trade remains the designated audit shipment and must receive a correct ruling.",
+            activeRegulationIds: ["manifest-match", "operator-scope"],
+            introducedStandingOrderIds: [],
+            authorizedScanIds: ["cargo"],
+            aiValidationAvailable: false,
+            lessonGuarantees: [
+              { ruleId: "operator-scope", kind: "violation" },
+              { ruleId: "operator-scope", kind: "benign" }
+            ],
+            scriptedContact: {
+              name: "Grey Ledger 62",
+              shipClassName: "Light Freighter",
+              operatorId: "greywake",
+              routeProfile: "bonded freight",
+              cargoId: "drive-components",
+              variants: [[], ["manifest-match"], ["operator-scope"], ["manifest-match", "operator-scope"]]
+            },
+            consequenceCopy: {
+              deficient: "Controlled cargo authority withheld. Repeat licence-review duty period.",
+              qualified: "Licence-review procedure accepted. Report forwarded to habitat supply control.",
+              commended: "Licence-review procedure exceeds qualification standard. Report forwarded with commendation."
+            }
+          },
+          {
+            id: "habitat-supply-audit",
+            title: "Habitat Supply Audit",
+            briefing: "Habitat supply control has ordered a containment audit on inbound civil freight. Apply all accumulated freight controls. Greywake Trade remains the designated audit shipment and must receive a correct ruling.",
+            activeRegulationIds: ["manifest-match", "operator-scope", "cargo-containment"],
+            introducedStandingOrderIds: [],
+            authorizedScanIds: ["cargo"],
+            aiValidationAvailable: false,
+            lessonGuarantees: [
+              { ruleId: "cargo-containment", kind: "violation" },
+              { ruleId: "cargo-containment", kind: "benign" }
+            ],
+            scriptedContact: {
+              name: "Grey Ledger 88",
+              shipClassName: "Light Freighter",
+              operatorId: "greywake",
+              routeProfile: "civil freight",
+              cargoId: "coolant-canisters",
+              destinationId: "nacre-port",
+              variants: [[], ["manifest-match"], ["operator-scope"], ["cargo-containment"], ["manifest-match", "operator-scope"], ["manifest-match", "cargo-containment"], ["operator-scope", "cargo-containment"]]
+            },
+            consequenceCopy: {
+              deficient: "Freight qualification withheld pending a repeated habitat-supply audit.",
+              qualified: "J4 freight qualification granted. Cargo declaration accuracy is now standing practice.",
+              commended: "J4 freight qualification granted with commendation. Cargo declaration accuracy is now standing practice."
+            }
+          }
+        ]
+      }
     ]
   };
 })(window.SpaceCustoms = window.SpaceCustoms || {});

@@ -406,13 +406,12 @@ The Contact Dossier must remain usable while reading a rule. Allegations and fin
 
 ### Phase 2 - Regulations Panel UX Prototype
 
-- Render separate Standing Order and Active Regulation sections from representative maximum-load data.
-- Design compact Standing Order rows without removing evidence or allegation access.
-- Compare internal scrolling against the optional expanded reference mode.
+- Render separate Standing Order and Active Regulation sections.
+- Use a fixed-width compact Standing Order row with code, short criterion, and allegation action; allow a compact wrapped fallback when necessary.
+- Keep internal scrolling and defer expanded-panel modes until playtesting demonstrates a need.
 - Test desktop, constrained-height, and narrow-width layouts.
-- Confirm the dossier, systems, allegation list, and ruling controls remain usable in every layout state.
 
-**Exit criteria:** a chosen panel behavior is readable at expected rule loads and does not obscure the evidence-comparison workflow.
+**Status:** first implementation complete; readability at later maximum Standing Order load remains a Phase 5 playtest question.
 
 ### Phase 3 - Rule And Generator Plumbing
 
@@ -425,6 +424,8 @@ The Contact Dossier must remain usable while reading a rule. Allegations and fin
 
 **Exit criteria:** generated ships obey the authored shift, every violation has a clue and proof path, and no inactive campaign rule can affect a ruling.
 
+**Status:** first implementation complete, including constrained lesson cases, Greywake variants, and random-mode compatibility.
+
 ### Phase 4 - Campaign Lifecycle
 
 - Separate campaign initialization from shift-state reset.
@@ -435,6 +436,8 @@ The Contact Dossier must remain usable while reading a rule. Allegations and fin
 
 **Exit criteria:** the player can complete the entire first posting in one browser session with correct rules, transitions, and accumulated Standing Orders.
 
+**Status:** first implementation complete; browser playtesting and balance iteration remain.
+
 ### Phase 5 - Content Expansion And Balancing
 
 - Playtest the vertical slice before authoring later postings.
@@ -444,12 +447,10 @@ The Contact Dossier must remain usable while reading a rule. Allegations and fin
 
 **Exit criteria:** the vertical slice demonstrates understandable teaching, meaningful escalation, and a manageable cumulative ruleset.
 
-### Phase 6 - Canonical Documentation
+### Phase 6 - Documentation Consistency Audit
 
-- Update `docs/DESIGN.md` with the accepted campaign loop, Standing Order role, and intershift experience.
-- Update `docs/ARCHITECTURE.md` with campaign definitions, state ownership, lifecycle, and generator interfaces.
-- Record accepted rule-taxonomy, progression, panel, and persistence choices in `docs/DECISIONS.md`.
-- Update verification instructions if script files or validation entry points change.
+- Update canonical design, architecture, decisions, and verification guidance alongside each implementation phase.
+- Audit the completed branch for stale descriptions, temporary interfaces, and playtest decisions that were not recorded.
 
 **Exit criteria:** canonical documentation describes the implemented and playtested behavior rather than speculative alternatives.
 

@@ -49,7 +49,8 @@
     }, {});
   }
 
-  function chooseViolations(activeRuleIds, className) {
+  function chooseViolations(activeRuleIds, className, constraints = {}) {
+    if (constraints.exactViolationIds) return new Set(constraints.exactViolationIds);
     const weights = config.classProfiles[className].risk;
     const selected = activeRuleIds.filter((ruleId) => {
       const probability = Math.min(0.48, 0.16 * (weights[ruleId] ?? 1));
@@ -62,11 +63,16 @@
       });
       selected.push(utils.randomFrom(weighted));
     }
+    (constraints.forcedViolationIds ?? []).forEach((ruleId) => selected.push(ruleId));
     return new Set(selected);
   }
 
-  function chooseBenignHints(activeRuleIds, violations) {
-    return new Set(activeRuleIds.filter((ruleId) => !violations.has(ruleId) && utils.chance(0.26)));
+  function chooseBenignHints(activeRuleIds, violations, constraints = {}) {
+    const selected = constraints.exactBenignHintIds
+      ? [...constraints.exactBenignHintIds]
+      : activeRuleIds.filter((ruleId) => !violations.has(ruleId) && utils.chance(0.26));
+    (constraints.forcedBenignHintIds ?? []).forEach((ruleId) => selected.push(ruleId));
+    return new Set(selected.filter((ruleId) => !violations.has(ruleId)));
   }
 
   function anomalyFor(ruleId, violations, benignHints, strong = 78) {
@@ -131,8 +137,43 @@
     return utils.randomFrom(templates[shipClass.name])();
   }
 
-  function chooseCargo(shipClass, violations, benignHints) {
+  function weightedChoice(items, weights = {}) {
+    const pool = items.flatMap((item) => Array(Math.max(1, weights[item.name] ?? weights[item.id] ?? 1)).fill(item));
+    return utils.randomFrom(pool);
+  }
+
+  function chooseShipClass(trafficProfile = {}, constraints = {}) {
+    if (constraints.shipClassName) return data.shipClasses.find((item) => item.name === constraints.shipClassName);
+    const allowedNames = constraints.shipClassNames ?? trafficProfile.shipClassNames;
+    const candidates = allowedNames?.length
+      ? data.shipClasses.filter((item) => allowedNames.includes(item.name))
+      : data.shipClasses;
+    return weightedChoice(candidates, trafficProfile.shipClassWeights);
+  }
+
+  function chooseRouteProfile(shipClass, trafficProfile, constraints, violations, benignHints) {
+    if (constraints.routeProfile) return constraints.routeProfile;
+    let candidates = shipClass.routeProfiles;
+    if (trafficProfile.routeProfiles?.length) {
+      const matching = candidates.filter((item) => trafficProfile.routeProfiles.includes(item));
+      if (matching.length) candidates = matching;
+    }
+    if (violations.has("commercial-service-authority") || benignHints.has("commercial-service-authority")) {
+      const freight = candidates.filter((item) => item.includes("freight"));
+      if (freight.length) candidates = freight;
+      else candidates = ["civil freight"];
+    }
+    return utils.randomFrom(candidates);
+  }
+
+  function chooseCargo(shipClass, violations, benignHints, trafficProfile = {}, constraints = {}) {
+    if (constraints.cargoId) return cargoById(constraints.cargoId);
     let candidates = shipClass.cargoIds.map(cargoById).filter(Boolean);
+    const allowedCargoIds = constraints.cargoIds ?? trafficProfile.cargoIds;
+    if (allowedCargoIds?.length) {
+      const matching = candidates.filter((cargo) => allowedCargoIds.includes(cargo.id));
+      candidates = matching.length ? matching : data.cargo.filter((cargo) => allowedCargoIds.includes(cargo.id));
+    }
     if (violations.has("cargo-containment") || benignHints.has("cargo-containment")) {
       candidates = candidates.filter((cargo) => containmentHazards.includes(cargo.hazardClass));
     }
@@ -143,12 +184,17 @@
     return utils.randomFrom(candidates.length ? candidates : data.cargo);
   }
 
-  function chooseDestination(cargo, violations, benignHints) {
+  function chooseDestination(cargo, violations, benignHints, trafficProfile = {}, constraints = {}) {
+    if (constraints.destinationId) return data.locations.find((item) => item.id === constraints.destinationId);
     if (violations.has("cargo-containment") || benignHints.has("cargo-containment")) {
       return utils.randomFrom(data.locations.filter((location) => location.kind === "habitat"));
     }
     const compatible = data.locations.filter((location) => cargo.allowedDestinationKinds.includes(location.kind));
-    return utils.randomFrom(compatible.length ? compatible : data.locations);
+    const destinationKinds = constraints.destinationKinds ?? trafficProfile.destinationKinds;
+    const profiled = destinationKinds?.length
+      ? compatible.filter((location) => destinationKinds.includes(location.kind))
+      : compatible;
+    return utils.randomFrom(profiled.length ? profiled : compatible.length ? compatible : data.locations);
   }
 
   function chooseOrigin(violations, benignHints) {
@@ -158,15 +204,28 @@
     return utils.randomFrom(data.locations);
   }
 
-  function chooseOperator(cargo, violations, benignHints) {
+  function chooseOperator(cargo, routeProfile, violations, benignHints, constraints = {}) {
     const hasHazardScope = (operator) => operator.licenceScopes.includes("hazardous");
+    const hasFreightScope = (operator) => operator.licenceScopes.includes("freight");
+    let candidates = constraints.operatorId
+      ? data.operators.filter((operator) => operator.id === constraints.operatorId)
+      : data.operators;
+    let operator;
     if (violations.has("operator-scope")) {
-      return utils.randomFrom(data.operators.filter((operator) => !hasHazardScope(operator)));
+      operator = utils.randomFrom(candidates.filter((item) => !hasHazardScope(item)).length ? candidates.filter((item) => !hasHazardScope(item)) : candidates);
+    } else if (hazardousClasses.includes(cargo.hazardClass)) {
+      operator = utils.randomFrom(candidates.filter(hasHazardScope).length ? candidates.filter(hasHazardScope) : candidates);
+    } else {
+      operator = utils.randomFrom(candidates);
     }
-    if (hazardousClasses.includes(cargo.hazardClass) && (benignHints.has("operator-scope") || utils.chance(0.58))) {
-      return utils.randomFrom(data.operators.filter(hasHazardScope));
-    }
-    return utils.randomFrom(data.operators);
+    let licenceScopes = [...operator.licenceScopes];
+    if (constraints.operatorLicenceScopes) licenceScopes = [...constraints.operatorLicenceScopes];
+    const isFreightRoute = routeProfile.includes("freight");
+    if (violations.has("commercial-service-authority")) licenceScopes = licenceScopes.filter((scope) => scope !== "freight");
+    else if (isFreightRoute && !licenceScopes.includes("freight")) licenceScopes.push("freight");
+    if (violations.has("operator-scope")) licenceScopes = licenceScopes.filter((scope) => scope !== "hazardous");
+    else if (hazardousClasses.includes(cargo.hazardClass) && !licenceScopes.includes("hazardous")) licenceScopes.push("hazardous");
+    return { ...operator, licenceScopes };
   }
 
   function chooseRegistryAuthority(violations) {
@@ -300,13 +359,14 @@
       restrictedPortStatuses.includes(origin.portStatus) ? 45 : 8
     );
     const operatorScore = anomalyFor("operator-scope", violations, benignHints, 76);
+    const serviceAuthorityScore = anomalyFor("commercial-service-authority", violations, benignHints, 76);
     const containmentScore = anomalyFor("cargo-containment", violations, benignHints, 76);
 
     return [
       field("declaration.registry", "REGISTRY ID", registryId, ["military-registry"], benignHints.has("military-registry") ? 46 : 8, "IFF ECHO"),
       field("declaration.registryAuthority", "REGISTRY AUTHORITY", registryAuthority.name, ["military-registry", "route-endorsement"], violations.has("military-registry") ? 58 : 8, "IFF ECHO"),
-      field("declaration.operator", "OPERATOR", operator.name, ["operator-scope"], operatorScore, "DOC VAR"),
-      field("declaration.operatorLicence", "OPERATOR LICENCE", operator.licenceScopes.join(" / ").toUpperCase(), ["operator-scope"], operatorScore, "DOC VAR"),
+      field("declaration.operator", "OPERATOR", operator.name, ["commercial-service-authority", "operator-scope"], Math.max(serviceAuthorityScore, operatorScore), "DOC VAR"),
+      field("declaration.operatorLicence", "OPERATOR LICENCE", operator.licenceScopes.join(" / ").toUpperCase(), ["commercial-service-authority", "operator-scope"], Math.max(serviceAuthorityScore, operatorScore), "DOC VAR"),
       field("declaration.class", "DECLARED CLASS", shipClass.name),
       field("declaration.hull", "DECLARED HULL", declaredHullCode, ["military-registry"], benignHints.has("military-registry") ? 46 : 8, "IFF ECHO"),
       field("declaration.hullAge", "HULL AGE", hullAge),
@@ -319,7 +379,7 @@
       field("route.originStatus", "ORIGIN STATUS", origin.portStatus.toUpperCase(), ["route-endorsement"], routeScore, "DOC VAR"),
       field("route.destination", "DESTINATION", destination.name, ["cargo-containment", "route-endorsement"], containmentScore, "DOC VAR"),
       field("route.destinationKind", "DESTINATION TYPE", destination.kind.toUpperCase(), ["cargo-containment"], containmentScore, "DOC VAR"),
-      field("route.profile", "ROUTE PROFILE", routeProfile.toUpperCase(), ["route-endorsement", "operator-scope"], Math.max(routeScore, operatorScore), "DOC VAR"),
+      field("route.profile", "ROUTE PROFILE", routeProfile.toUpperCase(), ["commercial-service-authority", "route-endorsement", "operator-scope"], Math.max(serviceAuthorityScore, routeScore, operatorScore), "DOC VAR"),
       field("route.permit", "TRANSIT PERMIT", `${operator.permitGrade}-${origin.routeCode}-${destination.routeCode}-${utils.randInt(100, 999)}`, ["route-endorsement"], routeScore, "DOC VAR"),
       field("route.endorsement", "ROUTE ENDORSEMENT", routeEndorsement, ["route-endorsement"], routeScore, "DOC VAR"),
 
@@ -400,6 +460,7 @@
     } = context;
     return {
       "route-endorsement": `${origin.name} status ${origin.portStatus.toUpperCase()}; route endorsement ${routeEndorsement}`,
+      "commercial-service-authority": `route profile ${context.routeProfile.toUpperCase()}; operator scopes ${operator.licenceScopes.join(" / ").toUpperCase()}`,
       "operator-scope": `${operator.name} scopes ${operator.licenceScopes.join(" / ").toUpperCase()}; cargo hazard ${cargo.hazardClass.toUpperCase()}`,
       "cargo-containment": `${cargo.hazardClass.toUpperCase()} cargo to ${destination.kind.toUpperCase()}; containment ${containmentCert}`,
       "component-recall": recallPolicy.label,
@@ -407,18 +468,25 @@
     };
   }
 
-  function generateShip(activeRuleIds, id, ruleVariants = {}) {
-    const shipClass = utils.randomFrom(data.shipClasses);
+  function generateShip(options, legacyId, legacyRuleVariants = {}) {
+    if (Array.isArray(options)) {
+      options = { enforcedRuleIds: options, shipId: legacyId, ruleVariants: legacyRuleVariants };
+    }
+    const {
+      enforcedRuleIds = [], shipId, ruleVariants = {}, trafficProfile = {}, constraints = {}
+    } = options;
+    const shipClass = chooseShipClass(trafficProfile, constraints);
     const profile = config.classProfiles[shipClass.name];
-    const violations = chooseViolations(activeRuleIds, shipClass.name);
-    const benignHints = chooseBenignHints(activeRuleIds, violations);
+    const violations = chooseViolations(enforcedRuleIds, shipClass.name, constraints);
+    const benignHints = chooseBenignHints(enforcedRuleIds, violations, constraints);
     const recallPolicy = ruleVariants["component-recall"]?.policyId
       ? data.recallPolicies.find((policy) => policy.id === ruleVariants["component-recall"].policyId)
       : utils.randomFrom(data.recallPolicies);
-    const cargo = chooseCargo(shipClass, violations, benignHints);
+    const routeProfile = chooseRouteProfile(shipClass, trafficProfile, constraints, violations, benignHints);
+    const cargo = chooseCargo(shipClass, violations, benignHints, trafficProfile, constraints);
     const origin = chooseOrigin(violations, benignHints);
-    const destination = chooseDestination(cargo, violations, benignHints);
-    const operator = chooseOperator(cargo, violations, benignHints);
+    const destination = chooseDestination(cargo, violations, benignHints, trafficProfile, constraints);
+    const operator = chooseOperator(cargo, routeProfile, violations, benignHints, constraints);
     const registryAuthority = chooseRegistryAuthority(violations);
     const militaryAuthority = data.registryAuthorities.find((authority) => authority.id === "mil-active");
     const militaryHull = utils.randomFrom(data.militaryHulls);
@@ -429,7 +497,6 @@
     const hullDescription = violations.has("military-registry") ? militaryHull.description : shipClass.hullDescription;
     const registryEndorsement = violations.has("military-registry") ? "NONE" : registryAuthority.id === "mil-active" ? "MIL-ACTIVE" : "CIV-ACTIVE";
     const registryId = generateRegistryId(registryAuthority, shipClass, operator, origin, shipClass.hullSeries);
-    const routeProfile = utils.randomFrom(shipClass.routeProfiles);
     const routeEndorsement = buildRouteEndorsement(origin, violations);
     const containmentCert = buildContainmentCert(cargo, destination, violations);
     const declaredMass = utils.randInt(cargo.massRange[0], cargo.massRange[1]);
@@ -459,8 +526,8 @@
     });
 
     return {
-      id,
-      name: generateShipName(shipClass, operator, origin),
+      id: shipId,
+      name: constraints.name ?? generateShipName(shipClass, operator, origin),
       className: shipClass.name,
       leaveIn: utils.randInt(config.contactLifetime[0], config.contactLifetime[1]),
       pilotNote: utils.randomFrom(data.pilotNotes),
@@ -475,8 +542,45 @@
       aiValidationActive: false,
       aiValidationMessage: null,
       aiValidationHighlightKeys: [],
-      collapsedDossierSectionIds: []
+      collapsedDossierSectionIds: [],
+      isScriptedContact: Boolean(constraints.isScriptedContact),
+      scenarioKind: constraints.scenarioKind ?? "random"
     };
+  }
+
+  function createAttemptPlan(shift, trafficProfile = {}) {
+    const total = utils.randInt(config.campaign.contactCount[0], config.campaign.contactCount[1]);
+    const mandatory = shift.lessonGuarantees.map((guarantee) => ({
+      kind: `lesson-${guarantee.kind}`,
+      constraints: guarantee.kind === "violation"
+        ? { exactViolationIds: [guarantee.ruleId], exactBenignHintIds: [], scenarioKind: "lesson-violation" }
+        : { exactViolationIds: [], exactBenignHintIds: [guarantee.ruleId], scenarioKind: "lesson-benign" }
+    }));
+    const story = shift.scriptedContact;
+    const storyViolations = utils.randomFrom(story.variants);
+    mandatory.push({
+      kind: "story",
+      constraints: {
+        exactViolationIds: [...storyViolations],
+        exactBenignHintIds: [],
+        isScriptedContact: true,
+        scenarioKind: "story",
+        name: story.name,
+        shipClassName: story.shipClassName,
+        operatorId: story.operatorId,
+        routeProfile: story.routeProfile,
+        cargoId: story.cargoId,
+        destinationId: story.destinationId
+      }
+    });
+    const fillerCount = Math.max(0, total - mandatory.length);
+    const fillers = Array.from({ length: fillerCount }, () => ({ kind: "random", constraints: {} }));
+    const earlyFillers = fillers.splice(0, Math.min(2, fillers.length));
+    return [...utils.shuffle([...mandatory, ...earlyFillers]), ...utils.shuffle(fillers)].map((slot, index) => ({
+      ...slot,
+      index,
+      trafficProfile
+    }));
   }
 
   function visibleAnomalies(ship) {
@@ -520,7 +624,7 @@
         failures.push(`bad active mix dossier ${dossierCount} scan ${scanCount}`);
       }
 
-      const ship = generateShip(active, index + 1, variants);
+      const ship = generateShip({ enforcedRuleIds: active, shipId: index + 1, ruleVariants: variants });
       distribution[ship.className] ??= {};
       ship.actualViolations.forEach((ruleId) => {
         distribution[ship.className][ruleId] = (distribution[ship.className][ruleId] ?? 0) + 1;
@@ -540,6 +644,42 @@
       }
     }
 
+    const posting = data.postings[0];
+    posting.shifts.forEach((shift) => {
+      const profile = config.campaign.shiftProfiles[shift.id];
+      for (let attempt = 0; attempt < Math.min(iterations, 200); attempt += 1) {
+        const plan = createAttemptPlan(shift, profile);
+        if (plan.length < 7 || plan.length > 9) failures.push(`${shift.id}: bad plan length ${plan.length}`);
+        if (plan.filter((slot) => slot.kind === "story").length !== 1) failures.push(`${shift.id}: story count`);
+        shift.lessonGuarantees.forEach((guarantee) => {
+          const constraintKey = guarantee.kind === "violation" ? "exactViolationIds" : "exactBenignHintIds";
+          if (!plan.some((slot) => slot.kind === `lesson-${guarantee.kind}` &&
+            (slot.constraints[constraintKey] ?? []).includes(guarantee.ruleId))) {
+            failures.push(`${shift.id}: missing ${guarantee.kind} ${guarantee.ruleId}`);
+          }
+        });
+        const enforcedRuleIds = [...posting.initialStandingOrderIds, ...shift.activeRegulationIds];
+        plan.forEach((slot, slotIndex) => {
+          const ship = generateShip({
+            shipId: slotIndex + 1,
+            enforcedRuleIds,
+            ruleVariants: selectRuleVariants(enforcedRuleIds),
+            trafficProfile: profile,
+            constraints: slot.constraints
+          });
+          if (ship.actualViolations.some((ruleId) => !enforcedRuleIds.includes(ruleId))) {
+            failures.push(`${shift.id}: inactive campaign violation`);
+          }
+          (slot.constraints.exactViolationIds ?? []).forEach((ruleId) => {
+            if (!ship.actualViolations.includes(ruleId)) failures.push(`${shift.id}: forced violation missing ${ruleId}`);
+          });
+          (slot.constraints.exactBenignHintIds ?? []).forEach((ruleId) => {
+            if (!ship.benignHintRuleIds.includes(ruleId)) failures.push(`${shift.id}: benign hint missing ${ruleId}`);
+          });
+        });
+      }
+    });
+
     return {
       passed: failures.length === 0 && seenRules.size === data.rules.length && benignCleanShips > 0 && dossierViolations > 0 && scanViolations > 0,
       failures,
@@ -553,6 +693,7 @@
 
   namespace.generator = {
     generateShip,
+    createAttemptPlan,
     visibleAnomalies,
     validate,
     selectActiveRuleIds,

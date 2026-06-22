@@ -62,7 +62,7 @@ Contacts remain long enough to read, but unresolved ships eventually leave and c
 
 ## Current Prototype Loop
 
-1. Read the four active regulations before starting the shift.
+1. Read the cumulative Standing Orders and the posting's Active Regulations before starting the shift.
 2. Monitor incoming contacts and their remaining lane time.
 3. Review passive readings immediately while waiting for the vessel declaration packet, then inspect declaration data, cargo paperwork, and lower-confidence irregularities once the packet arrives.
 4. Form a suspicion and run one or more active systems.
@@ -70,9 +70,11 @@ Contacts remain long enough to read, but unresolved ships eventually leave and c
 6. Mark any alleged active-rule violations whose evidence path is available: dossier rules are markable from the visible packet, while scan-confirmed rules require their report.
 7. Remove accidental or reconsidered allegations as needed.
 8. Clear a ship with no allegations, or detain it with the exact alleged violation set.
-9. Use the Ops Log and end-of-shift report to understand mistakes and resource use.
+9. Use the Ops Log and end-of-shift audit to understand mistakes, then qualify, retry, or advance to the next authored shift.
 
-Current shifts last ten minutes. Four regulations are active, selected as a mix of dossier-confirmed and scan-confirmed rules. Up to four contacts may occupy the lane. Active systems take two to four seconds, consume a shared eight-point power reserve, and power regenerates over time.
+The default campaign begins with three six-minute shifts at the J4 Freight Annex. `LIC-01` is the initial dossier-confirmed Standing Order; posting-specific regulations accumulate from `CAR-19` through `LIC-22` and `CAR-27`. Only Hold Tomography is authorized during this posting. A shift requires six rulings, at least 75% accuracy, and a correct ruling on the named Greywake audit shipment. Deficient shifts retry with regenerated traffic.
+
+Standing Orders and Active Regulations share evidence, allegation, and exact-match detention behavior. Their distinction is campaign context: Standing Orders persist after introduction, while Active Regulations belong to the current authored shift. The hidden `?mode=random` development mode retains the earlier ten-minute random four-rule shift.
 
 The bottom dock separates two kinds of feedback. Ops Log remains the explicit workstation/audit channel. Lane Comms is a clipped radio transcript for arrivals, delayed packet acknowledgements, scan requests, scan returns, and clear/detain instructions. Comms may reinforce timing and lane atmosphere, but it must not add proof, recommend scanners, reveal correctness, or duplicate non-radio departure notices.
 
@@ -93,6 +95,7 @@ Ship classes bias which violations are more common and define normal passive bas
 
 ## Active Regulations
 
+- `LIC-01`: commercial service authority, confirmed from dossier records and introduced as the first Standing Order.
 - `REG-12`: restricted hull authority, confirmed by Active Ping.
 - `ARM-04`: civil defensive-system licensing, confirmed by Module Query.
 - `MAT-31`: active component recall lot, confirmed by Module Query.
@@ -102,7 +105,7 @@ Ship classes bias which violations are more common and define normal passive bas
 - `LIC-22`: operator licence scope, confirmed from dossier records.
 - `CAR-27`: habitat cargo containment certificate, confirmed from dossier records.
 
-Only active regulations may generate violations during a shift.
+Only the union of introduced Standing Orders and current Active Regulations may generate violations during a campaign shift.
 
 ## Anti-Goals
 
