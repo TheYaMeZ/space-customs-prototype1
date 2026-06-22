@@ -244,12 +244,20 @@ h3,
   grid-template-columns: 42px minmax(500px, 2fr) minmax(270px, 0.95fr);
 }
 
+.workspace.rules-expanded {
+  grid-template-columns: minmax(400px, 500px) minmax(400px, 1fr) minmax(190px, 200px);
+}
+
 .workspace.systems-collapsed {
   grid-template-columns: minmax(215px, 0.72fr) minmax(500px, 2fr) 42px;
 }
 
 .workspace.rules-collapsed.systems-collapsed {
   grid-template-columns: 42px minmax(500px, 1fr) 42px;
+}
+
+.workspace.rules-expanded.systems-collapsed {
+  grid-template-columns: minmax(400px, 500px) minmax(400px, 1fr) 42px;
 }
 
 .panel {
@@ -293,6 +301,18 @@ h3,
   color: var(--amber);
 }
 
+.panel-toggle:disabled {
+  color: #656a5d;
+  border-color: #4b5045;
+  cursor: default;
+}
+
+.panel-controls {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 3px;
+}
+
 .panel-body {
   height: calc(100% - 36px);
   padding: 7px;
@@ -309,11 +329,16 @@ h3,
   flex-direction: column;
   justify-content: flex-start;
   padding-top: 9px;
+  padding-inline: 4px;
 }
 
-.side-panel.is-collapsed .panel-header > div,
+.side-panel.is-collapsed .panel-header > div:not(.panel-controls),
 .side-panel.is-collapsed .panel-body {
   display: none;
+}
+
+.rules-panel.is-collapsed .rules-panel-controls {
+  flex-direction: column;
 }
 
 .panel-indicator {
@@ -382,6 +407,113 @@ h3,
   min-width: 0;
   padding-inline: 3px;
   font-size: 0.5rem;
+}
+
+.rule-reference-card {
+  border: 1px solid #555c4d;
+  background: #171b16;
+  box-shadow: inset 3px 0 #3f493b;
+}
+
+.rule-reference-card.is-selected {
+  border-color: #829473;
+  box-shadow: inset 3px 0 var(--phosphor);
+}
+
+.rule-reference-card.is-alleged {
+  border-color: #71866a;
+  background: #202b20;
+}
+
+.rule-reference-card > header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 6px;
+  padding: 6px;
+  border-bottom: 1px solid #3e4439;
+}
+
+.rule-reference-heading {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 2px 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.rule-reference-heading small {
+  grid-column: 1 / -1;
+  color: #7f8876;
+  font-size: 0.49rem;
+  letter-spacing: 0.12em;
+}
+
+.rule-reference-heading b {
+  color: var(--amber);
+  font-size: 0.65rem;
+}
+
+.rule-reference-heading strong {
+  min-width: 0;
+  color: #d1d5c5;
+  font-size: 0.66rem;
+}
+
+.rule-reference-criterion {
+  margin: 0;
+  padding: 7px 8px;
+  color: #b9bfad;
+  font-size: 0.62rem;
+  line-height: 1.35;
+}
+
+.rule-reference-card dl {
+  margin: 0;
+  border-top: 1px solid #343a31;
+}
+
+.rule-reference-card dl > div {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 8px;
+  padding: 5px 8px;
+}
+
+.rule-reference-card dl > div + div {
+  border-top: 1px dotted #40463b;
+}
+
+.rule-reference-card dt {
+  color: var(--amber);
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+}
+
+.rule-reference-card dd {
+  margin: 0;
+  color: #a9b09e;
+  font-size: 0.57rem;
+  line-height: 1.35;
+}
+
+.rule-reference-card dd span {
+  color: #d0d3c5;
+  font-weight: 700;
+}
+
+.rule-reference-card dd code {
+  color: var(--phosphor);
+  font-family: inherit;
+  font-size: 0.54rem;
+}
+
+.rule-reference-card dd i {
+  color: #626a5b;
+  font-style: normal;
 }
 
 .rules-panel .panel-body {
@@ -854,6 +986,23 @@ h3,
   font-size: 0.66rem;
 }
 
+@media (min-width: 1081px) {
+  .workspace.rules-expanded:not(.systems-collapsed) .scan-button {
+    min-height: 37px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 5px 6px;
+  }
+
+  .workspace.rules-expanded:not(.systems-collapsed) .scan-button small {
+    display: none;
+  }
+
+  .workspace.rules-expanded:not(.systems-collapsed) .scan-button b {
+    grid-row: 1;
+    font-size: 0.58rem;
+  }
+}
+
 .scan-button.is-running {
   border-color: var(--amber);
   background: linear-gradient(#49432f, #29281f);
@@ -1295,8 +1444,10 @@ h3,
 
   .workspace,
   .workspace.rules-collapsed,
+  .workspace.rules-expanded,
   .workspace.systems-collapsed,
-  .workspace.rules-collapsed.systems-collapsed {
+  .workspace.rules-collapsed.systems-collapsed,
+  .workspace.rules-expanded.systems-collapsed {
     grid-template-columns: 1fr;
     grid-template-rows: auto;
   }
@@ -1306,6 +1457,7 @@ h3,
     height: auto;
     flex-direction: row;
     justify-content: space-between;
+    padding-inline: 8px;
   }
 
   .panel,
@@ -1325,8 +1477,12 @@ h3,
     min-height: 150px;
   }
 
-  .side-panel.is-collapsed .panel-header > div {
+  .side-panel.is-collapsed .panel-header > div:not(.panel-controls) {
     display: block;
+  }
+
+  .rules-panel.is-collapsed .rules-panel-controls {
+    flex-direction: row;
   }
 
   .topbar {

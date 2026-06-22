@@ -108,11 +108,19 @@ Minimal bootstrap:
   criterion,
   shortCriterion,
   confirmingScan,
-  evidenceType
+  evidenceType,
+  reference: {
+    applicability,
+    dossierFields,
+    passiveFields,
+    reportFields
+  }
 }
 ```
 
 `confirmingScan` references a scanner ID from `config.scans` for scan-confirmed rules. Dossier-confirmed rules use `confirmingScan: null` and `evidenceType: "dossier"`; these are markable as soon as a ship is selected.
+
+`reference` contains static presentation metadata for expanded rule cards. Its field names must match labels presented in the dossier, passive survey, and confirming report. The UI may combine this metadata with the scanner label from `config.scans`, but must not combine it with generated ship truth.
 
 Standing Order versus Active Regulation is not stored on this definition. Campaign state and the current shift definition provide that context, allowing a rule such as `CAR-19` to be promoted without duplication.
 
@@ -215,16 +223,16 @@ The singleton `SpaceCustoms.engine.state` owns:
 - Active regulation variants.
 - Traffic and selected ship/rule/report IDs.
 - Ops Log entries, Lane Comms entries, and resolved-contact count.
-- Side-panel collapse state.
+- Regulations panel mode (`collapsed`, `normal`, or `expanded`) and independent Active Systems collapse state.
 
-Ship-specific scan, allegation, and AI Validation state remains on each generated ship. The Regulations panel owns the always-visible ruling controls, while the Active Systems panel owns scan and AI Validation actions.
+Ship-specific scan, allegation, and AI Validation state remains on each generated ship. The Regulations panel owns the always-visible ruling controls, while the Active Systems panel owns scan and AI Validation actions. Expanded Regulations cards are derived only from rule definitions and campaign category context. Attempt preparation resets Regulations to normal; panel mode never changes evidence or action availability.
 
 Lane Comms entries are presentation state for non-proof radio transcript flavour. A scheduled entry can be inserted after a short delay, then reserves its row with a temporary `TX` or `RX` carrier label in the message area before revealing its transcript. Initial ship replies mark the declaration packet as received; Comms must not inspect hidden violation truth or otherwise determine correctness.
 
 ## Important Invariants
 
-- `activeRuleIds` contains four distinct rules selected from `data.rules`.
-- Ships may violate only active regulations.
+- In campaign mode, `activeRuleIds` is the union of introduced Standing Orders and the current shift's Active Regulations; random mode selects four distinct rules.
+- Ships may violate only rules in `activeRuleIds`.
 - Every violation has a passive or dossier clue at or above `passiveTagThreshold`.
 - Every scan-confirmed violation appears in the correct confirming report.
 - Every dossier-confirmed violation has visible supporting fields in the dossier.

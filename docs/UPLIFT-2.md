@@ -145,15 +145,15 @@ Commendation changes feedback copy only. A deficient result repeats the same aut
 - Does the five-order ceiling remain readable once several orders are active?
 - Should campaign completion offer restart only or a posting selector for replay and development?
 
-### Before Committing The Panel Layout
+### Panel Layout Playtest Questions
 
 - How many compact Standing Orders remain readable before scrolling becomes necessary?
 - Does separating the two categories help the player understand permanence and posting context?
 - Can allegations and final ruling controls remain visible with the expected maximum rule load?
-- Does a temporarily expanded Regulations panel improve comparison, or obscure the dossier fields needed for that comparison?
-- What happens at narrower viewport widths where doubling the panel is not viable?
+- Does the expanded Regulations reference improve comparison without obscuring the dossier fields needed for that comparison?
+- At narrower widths, does stacked expansion remain useful without excessive scrolling?
 
-The proposed double-width panel is a prototype option, not an established design decision. Test it against a simpler internal scroll or full-height reference mode before committing to it.
+The implemented three-state panel keeps compact routine rows in normal mode and provides full operational reference cards in expanded mode. On desktop the expanded panel targets roughly 500px and compacts Active Systems; stacked layouts preserve panel order and full-width systems. Continue testing whether the extra reference access improves recall enough to justify its spatial cost.
 
 ### Before Expanding Beyond One Posting
 
@@ -372,11 +372,7 @@ Split the panel conceptually into two sections:
 
 Compact Standing Order rows must still provide access to the complete criterion, evidence path, selected state, and reversible allegation action. Compactness must not turn them into unexplained codes or hide information needed for a ruling.
 
-Prototype and compare:
-
-- independent scrolling within the existing panel width;
-- an expanded reference mode that temporarily widens the Regulations panel and narrows Active Systems;
-- narrow-screen behavior where the panel must stack or use an overlay instead of doubling in width.
+The Regulations panel steps through collapsed, normal, and expanded modes using adjacent directional controls. Expanded mode temporarily widens Regulations, narrows Active Systems on desktop, and renders every enforced rule with its criterion, applicability, exact evidence labels, and confirmation path. At stacked widths, expansion reveals the same cards without changing panel order or compacting Systems.
 
 The Contact Dossier must remain usable while reading a rule. Allegations and final ruling controls should remain visible, and no layout state may change evidence availability.
 
@@ -408,10 +404,11 @@ The Contact Dossier must remain usable while reading a rule. Allegations and fin
 
 - Render separate Standing Order and Active Regulation sections.
 - Use a fixed-width compact Standing Order row with code, short criterion, and allegation action; allow a compact wrapped fallback when necessary.
-- Keep internal scrolling and defer expanded-panel modes until playtesting demonstrates a need.
+- Add collapsed, normal, and expanded modes with persistent left/right stepping controls.
+- In expanded mode, render static full-reference cards and compact Active Systems only at desktop widths.
 - Test desktop, constrained-height, and narrow-width layouts.
 
-**Status:** first implementation complete; readability at later maximum Standing Order load remains a Phase 5 playtest question.
+**Status:** implementation complete; detailed-reference use, later maximum Standing Order load, and spatial cost remain Phase 5 playtest questions.
 
 ### Phase 3 - Rule And Generator Plumbing
 

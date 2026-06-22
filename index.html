@@ -33,7 +33,10 @@
       <aside id="rules-panel" class="panel side-panel rules-panel">
         <div class="panel-header">
           <div><span class="panel-code">REF</span><h2>Regulations</h2></div>
-          <button class="panel-toggle" data-panel="rules" aria-label="Collapse regulations">[&lt;]</button>
+          <div class="panel-controls rules-panel-controls" role="group" aria-label="Regulations panel size">
+            <button class="panel-toggle" data-rules-step="-1" aria-label="Collapse regulations one step">[&lt;]</button>
+            <button class="panel-toggle" data-rules-step="1" aria-label="Expand regulations one step">[&gt;]</button>
+          </div>
         </div>
         <div class="panel-body">
           <div id="rules-list" class="rule-list"></div>

@@ -76,6 +76,8 @@ The default campaign begins with three six-minute shifts at the J4 Freight Annex
 
 Standing Orders and Active Regulations share evidence, allegation, and exact-match detention behavior. Their distinction is campaign context: Standing Orders persist after introduction, while Active Regulations belong to the current authored shift. The hidden `?mode=random` development mode retains the earlier ten-minute random four-rule shift.
 
+The Regulations panel has collapsed, normal, and expanded reference modes. Normal mode preserves compact Standing Orders and full Active Regulation rows. Expanded mode presents every enforced rule as an operational reference: its full criterion, applicability, exact dossier and passive labels to inspect, and either the dossier comparison or scanner report fields that confirm it. This reference is static law-and-interface guidance; it never reacts to ship truth or identifies which current values establish guilt. On desktop it takes space from Active Systems while leaving system identity, authorization, acquisition state, and power cost available. At stacked widths the panels retain their ordinary order and full-width Systems presentation. Each shift attempt begins in normal mode.
+
 The bottom dock separates two kinds of feedback. Ops Log remains the explicit workstation/audit channel. Lane Comms is a clipped radio transcript for arrivals, delayed packet acknowledgements, scan requests, scan returns, and clear/detain instructions. Comms may reinforce timing and lane atmosphere, but it must not add proof, recommend scanners, reveal correctness, or duplicate non-radio departure notices.
 
 ## Current Evidence Language

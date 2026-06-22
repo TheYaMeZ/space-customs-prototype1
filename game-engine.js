@@ -48,7 +48,8 @@
     attemptPlan: [],
     nextPlanIndex: 0,
     lastShiftResult: null,
-    collapsed: { rules: false, systems: false }
+    rulesPanelMode: "normal",
+    collapsed: { systems: false }
   };
 
   function refresh() {
@@ -679,6 +680,7 @@
   }
 
   function startShift() {
+    state.rulesPanelMode = "normal";
     state.mode = "active";
     namespace.ui.hideOverlay();
     addLog(`Shift active. Enforced rules: ${activeRules().map((rule) => rule.code).join(", ")}.`);
@@ -744,7 +746,8 @@
       scriptedContactCorrect: false,
       attemptPlan: [],
       nextPlanIndex: 0,
-      lastShiftResult: null
+      lastShiftResult: null,
+      rulesPanelMode: "normal"
     });
   }
 
@@ -774,7 +777,8 @@
       introducedStandingOrderIds: [...data.postings[0].initialStandingOrderIds],
       completedShiftResults: []
     };
-    state.collapsed = { rules: false, systems: false };
+    state.rulesPanelMode = "normal";
+    state.collapsed = { systems: false };
     prepareShiftAttempt(true);
   }
 

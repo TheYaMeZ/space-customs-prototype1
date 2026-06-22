@@ -70,6 +70,38 @@
   function renderRules() {
     const { state } = engine;
     const ship = engine.getShip();
+    const fieldList = (fields) => fields.map((field) => `<code>${field}</code>`).join(" <i>·</i> ");
+    const expandedRuleCard = (rule, category) => {
+      const selected = state.selectedRuleId === rule.id;
+      const alleged = ship?.allegedViolationIds.includes(rule.id);
+      const canMark = engine.hasConfirmingReport(ship, rule.id);
+      const reference = rule.reference;
+      const inspectGroups = [
+        reference.passiveFields.length ? `<span>PASSIVE</span> ${fieldList(reference.passiveFields)}` : "",
+        reference.dossierFields.length ? `<span>DOSSIER</span> ${fieldList(reference.dossierFields)}` : ""
+      ].filter(Boolean).join("<br>");
+      const confirm = rule.evidenceType === "dossier"
+        ? `<span>DOSSIER COMPARISON</span> ${fieldList(reference.dossierFields)}`
+        : `<span>${engine.scanConfig(rule.confirmingScan).label}</span>${reference.reportFields.length ? ` ${fieldList(reference.reportFields)}` : ""}`;
+      return `
+        <article class="rule-reference-card ${selected ? "is-selected" : ""} ${alleged ? "is-alleged" : ""}">
+          <header>
+            <button class="rule-reference-heading" data-rule="${rule.id}">
+              <small>${category}</small>
+              <b>${rule.code}</b>
+              <strong>${rule.title}</strong>
+            </button>
+            <button class="rule-mark" data-allegation-rule="${rule.id}" ${canMark ? "" : "disabled"}>${alleged ? "REMOVE" : "MARK"}</button>
+          </header>
+          <p class="rule-reference-criterion">${rule.criterion}</p>
+          <dl>
+            <div><dt>APPLIES WHEN</dt><dd>${reference.applicability}</dd></div>
+            <div><dt>INSPECT</dt><dd>${inspectGroups}</dd></div>
+            <div><dt>CONFIRM</dt><dd>${confirm}</dd></div>
+          </dl>
+        </article>
+      `;
+    };
     const fullRuleRow = (rule) => {
       const selected = state.selectedRuleId === rule.id;
       const alleged = ship?.allegedViolationIds.includes(rule.id);
@@ -107,12 +139,17 @@
     };
     const standing = engine.standingOrders();
     const regulations = engine.activeRegulations();
-    els.rulesList.innerHTML = `
-      <div class="rule-group-label">STANDING ORDERS</div>
-      ${standing.length ? standing.map(compactOrderRow).join("") : '<p class="rule-group-empty">NONE ISSUED</p>'}
-      <div class="rule-group-label">ACTIVE REGULATIONS</div>
-      ${regulations.length ? regulations.map(fullRuleRow).join("") : '<p class="rule-group-empty">NONE ACTIVE</p>'}
-    `;
+    els.rulesList.innerHTML = state.rulesPanelMode === "expanded" ? `
+        <div class="rule-group-label">STANDING ORDERS</div>
+        ${standing.length ? standing.map((rule) => expandedRuleCard(rule, "STANDING ORDER")).join("") : '<p class="rule-group-empty">NONE ISSUED</p>'}
+        <div class="rule-group-label">ACTIVE REGULATIONS</div>
+        ${regulations.length ? regulations.map((rule) => expandedRuleCard(rule, "ACTIVE REGULATION")).join("") : '<p class="rule-group-empty">NONE ACTIVE</p>'}
+      ` : `
+        <div class="rule-group-label">STANDING ORDERS</div>
+        ${standing.length ? standing.map(compactOrderRow).join("") : '<p class="rule-group-empty">NONE ISSUED</p>'}
+        <div class="rule-group-label">ACTIVE REGULATIONS</div>
+        ${regulations.length ? regulations.map(fullRuleRow).join("") : '<p class="rule-group-empty">NONE ACTIVE</p>'}
+      `;
     els.rulesList.querySelectorAll("[data-rule]").forEach((button) => {
       button.addEventListener("click", () => {
         state.selectedRuleId = button.dataset.rule;
@@ -418,11 +455,21 @@
 
   function renderPanels() {
     const { state } = engine;
-    els.workspace.classList.toggle("rules-collapsed", state.collapsed.rules);
+    const rulesCollapsed = state.rulesPanelMode === "collapsed";
+    const rulesExpanded = state.rulesPanelMode === "expanded";
+    els.workspace.classList.toggle("rules-collapsed", rulesCollapsed);
+    els.workspace.classList.toggle("rules-expanded", rulesExpanded);
     els.workspace.classList.toggle("systems-collapsed", state.collapsed.systems);
-    els.rulesPanel.classList.toggle("is-collapsed", state.collapsed.rules);
+    els.rulesPanel.classList.toggle("is-collapsed", rulesCollapsed);
+    els.rulesPanel.classList.toggle("is-expanded", rulesExpanded);
     els.systemsPanel.classList.toggle("is-collapsed", state.collapsed.systems);
-    document.querySelector('[data-panel="rules"]').textContent = state.collapsed.rules ? "[>]" : "[<]";
+    const modeIndex = ["collapsed", "normal", "expanded"].indexOf(state.rulesPanelMode);
+    const left = document.querySelector('[data-rules-step="-1"]');
+    const right = document.querySelector('[data-rules-step="1"]');
+    left.disabled = modeIndex === 0;
+    right.disabled = modeIndex === 2;
+    left.setAttribute("aria-label", modeIndex === 0 ? "Regulations fully collapsed" : modeIndex === 1 ? "Collapse regulations" : "Reduce regulations to normal width");
+    right.setAttribute("aria-label", modeIndex === 2 ? "Regulations fully expanded" : modeIndex === 0 ? "Restore regulations to normal width" : "Expand regulations reference");
     document.querySelector('[data-panel="systems"]').textContent = state.collapsed.systems ? "[<]" : "[>]";
   }
 
@@ -511,9 +558,18 @@
   }
 
   function bindEvents() {
-    document.querySelectorAll(".panel-toggle").forEach((button) => {
+    document.querySelectorAll("[data-rules-step]").forEach((button) => {
       button.addEventListener("click", () => {
-        engine.state.collapsed[button.dataset.panel] = !engine.state.collapsed[button.dataset.panel];
+        const modes = ["collapsed", "normal", "expanded"];
+        const nextIndex = modes.indexOf(engine.state.rulesPanelMode) + Number(button.dataset.rulesStep);
+        if (nextIndex < 0 || nextIndex >= modes.length) return;
+        engine.state.rulesPanelMode = modes[nextIndex];
+        render();
+      });
+    });
+    document.querySelectorAll('[data-panel="systems"]').forEach((button) => {
+      button.addEventListener("click", () => {
+        engine.state.collapsed.systems = !engine.state.collapsed.systems;
         renderPanels();
       });
     });

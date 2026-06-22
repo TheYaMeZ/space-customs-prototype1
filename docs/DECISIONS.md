@@ -161,3 +161,11 @@ This file records consequential choices that are easy to accidentally reverse. I
 **Why:** Advancement should require both sound judgment and traffic processing, while a guaranteed authored contact ensures the focal lesson was handled correctly.
 
 **Consequence:** Campaign shifts last six minutes, stop arrivals for the final 90 seconds, and repeat on deficiency. Live status shows rulings and completed-contact accuracy instead of score and misses.
+
+## D-021: Regulations Use A Three-State Reference Panel
+
+**Decision:** Regulations steps through collapsed, normal, and expanded modes with persistent directional controls. Expanded mode shows static operational reference cards for every enforced rule and compacts Active Systems on desktop.
+
+**Why:** Compact Standing Orders are useful during routine inspection but do not provide enough detail when the player needs to recover an exact evidence relationship. A spatial expansion keeps that reference beside the dossier without adding truth-sensitive hints or a separate modal workflow.
+
+**Consequence:** Rule definitions carry applicability and exact dossier, passive, and report field labels. Expanded cards show those labels and the configured confirming scanner, never current ship truth. Stacked layouts keep full-width Systems controls, manual Systems collapse remains independent, and every shift attempt resets Regulations to normal.

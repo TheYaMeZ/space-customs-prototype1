@@ -8,7 +8,13 @@
         criterion: "Vessels declaring bonded freight, civil freight, or frontier freight service require operator licence scope FREIGHT.",
         shortCriterion: "FREIGHT routes require FREIGHT operator scope.",
         confirmingScan: null,
-        evidenceType: "dossier"
+        evidenceType: "dossier",
+        reference: {
+          applicability: "A vessel declares bonded freight, civil freight, or frontier freight service.",
+          dossierFields: ["ROUTE PROFILE", "OPERATOR LICENCE"],
+          passiveFields: [],
+          reportFields: []
+        }
       },
       {
         id: "military-registry",
@@ -16,7 +22,13 @@
         title: "Restricted hull authority",
         criterion: "Measured hull prefixes MX and EX require endorsement MIL-ACTIVE from the issuing registry.",
         confirmingScan: "transponder",
-        evidenceType: "scan"
+        evidenceType: "scan",
+        reference: {
+          applicability: "A measured hull may belong to a restricted registry series.",
+          dossierFields: ["DECLARED HULL", "REGISTRY AUTHORITY", "REGISTRY ENDORSEMENT"],
+          passiveFields: ["IFF COHERENCE"],
+          reportFields: ["MEASURED.HULL", "MEASURED.AUTH", "REGISTRY.ENDORSEMENT"]
+        }
       },
       {
         id: "weapon-license",
@@ -24,7 +36,13 @@
         title: "Civil defence licensing",
         criterion: "Installed weapons and point-defence mounts require licence DEF-CIV.",
         confirmingScan: "modules",
-        evidenceType: "scan"
+        evidenceType: "scan",
+        reference: {
+          applicability: "The vessel may carry installed weapons or point-defence mounts.",
+          dossierFields: ["DEFENCE LICENCE"],
+          passiveFields: ["EM APERTURES"],
+          reportFields: ["M##.TYPE", "M##.LIC"]
+        }
       },
       {
         id: "component-recall",
@@ -33,6 +51,12 @@
         criterion: "Installed modules matching the active recall family and lot prefix are restricted pending yard recertification.",
         confirmingScan: "modules",
         evidenceType: "scan",
+        reference: {
+          applicability: "Installed equipment may belong to the active recall family and lot.",
+          dossierFields: ["REFIT STATUS", "SERVICE CONTRACTOR"],
+          passiveFields: ["EM APERTURES"],
+          reportFields: ["M##.MAKE", "M##.MODEL", "M##.LOT"]
+        },
         variants: [
           {
             id: "cvr-governor",
@@ -52,7 +76,13 @@
         title: "Lane reactor limit",
         criterion: "Controlled-lane reactor output may not exceed 100.0% rated output.",
         confirmingScan: "thermal",
-        evidenceType: "scan"
+        evidenceType: "scan",
+        reference: {
+          applicability: "A powered vessel enters the controlled inspection lane.",
+          dossierFields: ["REACTOR CLASS"],
+          passiveFields: ["PLUME STABILITY"],
+          reportFields: ["RATED.OUTPUT", "SAMPLE.01–05"]
+        }
       },
       {
         id: "manifest-match",
@@ -61,7 +91,13 @@
         criterion: "Measured cargo must remain within +/- 2.0 tonnes and match the seal ledger.",
         shortCriterion: "Cargo must remain within +/- 2.0 t and match seals.",
         confirmingScan: "cargo",
-        evidenceType: "scan"
+        evidenceType: "scan",
+        reference: {
+          applicability: "The vessel declares cargo mass and sealed cargo units.",
+          dossierFields: ["DECLARED MASS", "SEAL LEDGER", "DEPARTURE LOAD CERT"],
+          passiveFields: ["MASS SHADOW"],
+          reportFields: ["MANIFEST.MASS", "MEASURED.MASS", "MASS.DELTA", "SEAL.COUNT"]
+        }
       },
       {
         id: "route-endorsement",
@@ -69,7 +105,13 @@
         title: "Restricted-origin endorsement",
         criterion: "Departures from quarantine or sanction-watch ports require route endorsement RTE-INSPECT.",
         confirmingScan: null,
-        evidenceType: "dossier"
+        evidenceType: "dossier",
+        reference: {
+          applicability: "The declared origin is under quarantine or sanction watch.",
+          dossierFields: ["ORIGIN STATUS", "ROUTE ENDORSEMENT"],
+          passiveFields: ["IFF COHERENCE"],
+          reportFields: []
+        }
       },
       {
         id: "operator-scope",
@@ -77,7 +119,13 @@
         title: "Operator licence scope",
         criterion: "Operators without hazardous freight scope may not carry bio, pressure, radiological, volatile, or weapons-adjacent cargo.",
         confirmingScan: null,
-        evidenceType: "dossier"
+        evidenceType: "dossier",
+        reference: {
+          applicability: "The declared cargo belongs to a controlled hazardous category.",
+          dossierFields: ["OPERATOR LICENCE", "CARGO CATEGORY", "HAZARD CLASS", "ROUTE PROFILE"],
+          passiveFields: [],
+          reportFields: []
+        }
       },
       {
         id: "cargo-containment",
@@ -85,7 +133,13 @@
         title: "Habitat cargo containment",
         criterion: "Volatile or pressure cargo routed to habitat destinations requires containment certificate CN-HAB.",
         confirmingScan: null,
-        evidenceType: "dossier"
+        evidenceType: "dossier",
+        reference: {
+          applicability: "Volatile or pressure cargo is routed to a habitat destination.",
+          dossierFields: ["HAZARD CLASS", "DESTINATION TYPE", "CONTAINMENT CERT"],
+          passiveFields: [],
+          reportFields: []
+        }
       }
     ],
     namePools: {
