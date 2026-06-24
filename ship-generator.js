@@ -468,6 +468,35 @@
     };
   }
 
+  function buildFlavourContext(context, shipName, constraints = {}) {
+    const hasDefenceDeclaration = context.modules.some((module) => module.type === "point-defence mount");
+    return {
+      name: shipName,
+      className: context.shipClass.name,
+      routeProfile: context.routeProfile,
+      cargoName: context.cargo.name,
+      cargoCategory: context.cargo.category,
+      hazardClass: context.cargo.hazardClass,
+      destinationName: context.destination.name,
+      destinationKind: context.destination.kind,
+      originName: context.origin.name,
+      originStatus: context.origin.portStatus,
+      operatorName: context.operator.name,
+      operatorId: constraints.operatorId ?? context.operator.id,
+      operatorTags: context.operator.reputationTags ?? [],
+      permitGrade: context.operator.permitGrade,
+      hasDefenceDeclaration,
+      storyKey: constraints.operatorId ?? null,
+      scenarioKind: constraints.scenarioKind ?? "random",
+      isScriptedContact: Boolean(constraints.isScriptedContact)
+    };
+  }
+
+  function choosePilotNote(flavourContext) {
+    if (namespace.flavour?.pilotNote) return namespace.flavour.pilotNote(flavourContext, utils);
+    return `${flavourContext.className} holding ${flavourContext.routeProfile} profile; declaration channel remains open.`;
+  }
+
   function generateShip(options, legacyId, legacyRuleVariants = {}) {
     if (Array.isArray(options)) {
       options = { enforcedRuleIds: options, shipId: legacyId, ruleVariants: legacyRuleVariants };
@@ -524,13 +553,16 @@
       const base = violations.has("unsafe-reactor") ? 101.5 + index * 2.1 : 72 + index * 3.4;
       return Math.min(119.8, base + utils.randInt(-10, 10) / 10);
     });
+    const shipName = constraints.name ?? generateShipName(shipClass, operator, origin);
+    const flavourContext = buildFlavourContext(context, shipName, constraints);
 
     return {
       id: shipId,
-      name: constraints.name ?? generateShipName(shipClass, operator, origin),
+      name: shipName,
       className: shipClass.name,
       leaveIn: utils.randInt(config.contactLifetime[0], config.contactLifetime[1]),
-      pilotNote: utils.randomFrom(data.pilotNotes),
+      pilotNote: choosePilotNote(flavourContext),
+      flavourContext,
       passiveSurvey: buildPassiveSurvey(context),
       dossier: buildDossier(context),
       reports: buildReports(context),

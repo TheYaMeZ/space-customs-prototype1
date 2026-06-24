@@ -9,11 +9,12 @@ There is no module bundler, package manager, backend, persistence layer, or netw
 `index.html` must load scripts in this order:
 
 1. `data.js`
-2. `config.js`
-3. `ship-generator.js`
-4. `game-engine.js`
-5. `ui.js`
-6. `app.js`
+2. `flavour-data.js`
+3. `config.js`
+4. `ship-generator.js`
+5. `game-engine.js`
+6. `ui.js`
+7. `app.js`
 
 Later scripts depend on interfaces created by earlier scripts.
 
@@ -29,7 +30,18 @@ Static content and domain definitions:
 - Name pools, contractors, manufacturers, module families, and recall policies.
 - Restricted and military-specific domain values.
 
-Add flavour here when it does not affect balance or timing.
+Domain flavour belongs here only when another mechanic directly consumes it.
+
+### `flavour-data.js`
+
+Non-mechanical presentation flavour:
+
+- Attribute-aware Contact Dossier summary note pools.
+- J4 control and ship Lane Comms copy pools.
+- Scanner-specific and scripted-contact-specific comms variations.
+- Lightweight selectors that combine generic, attribute-matching, and story-matching pools.
+
+This file may use generated presentation context, but it must not change rule enforcement, evidence availability, traffic generation, or scoring.
 
 ### `config.js`
 
@@ -195,6 +207,7 @@ generateShip({ shipId, enforcedRuleIds, ruleVariants, trafficProfile, constraint
   className,
   leaveIn,
   pilotNote,
+  flavourContext,
   passiveSurvey,
   dossier,
   reports,
@@ -211,7 +224,7 @@ generateShip({ shipId, enforcedRuleIds, ruleVariants, trafficProfile, constraint
 }
 ```
 
-`packetStatus` gates whether detailed declaration rows are currently available. Active-system returns remain available in the dossier when discovered, including while a declaration packet is pending. `collapsedDossierSectionIds` stores per-contact presentation state and must not change evidence availability. `aiValidationHighlightKeys` is added when AI Validation evaluates available evidence. `actualViolations`, `benignHintRuleIds`, `ruleEvidence`, and anomaly scores are hidden state and must not directly drive normal UI verdicts.
+`packetStatus` gates whether detailed declaration rows are currently available. Active-system returns remain available in the dossier when discovered, including while a declaration packet is pending. `flavourContext` is generated presentation metadata for dossier notes and Lane Comms variation. `collapsedDossierSectionIds` stores per-contact presentation state and must not change evidence availability. `aiValidationHighlightKeys` is added when AI Validation evaluates available evidence. `actualViolations`, `benignHintRuleIds`, `ruleEvidence`, and anomaly scores are hidden state and must not directly drive normal UI verdicts.
 
 ### Engine State
 
@@ -228,7 +241,7 @@ The singleton `SpaceCustoms.engine.state` owns:
 
 Ship-specific scan, allegation, and AI Validation state remains on each generated ship. The Regulations panel owns the always-visible ruling controls, while the Active Systems panel owns scan and AI Validation actions. Expanded Regulations cards are derived only from rule definitions and campaign category context. Attempt preparation resets Regulations to normal; panel mode never changes evidence or action availability.
 
-Lane Comms entries are presentation state for non-proof radio transcript flavour. A scheduled entry can be inserted after a short delay, then reserves its row with a temporary `TX` or `RX` carrier label in the message area before revealing its transcript. Initial ship replies mark the declaration packet as received; Comms must not inspect hidden violation truth or otherwise determine correctness.
+Lane Comms entries are presentation state for non-proof radio transcript flavour. A scheduled entry can be inserted after a short delay, then reserves its row with a temporary `TX` or `RX` carrier label in the message area before revealing its transcript. Initial ship replies mark the declaration packet as received; Comms copy is selected from `flavour-data.js` using ship presentation context and must not determine correctness, evidence availability, or action gating.
 
 ## Important Invariants
 
@@ -248,7 +261,7 @@ Lane Comms entries are presentation state for non-proof radio transcript flavour
 
 ## Safe Extension Points
 
-- Add flavour by extending entity pools in `data.js`.
+- Add flavour by extending pools in `flavour-data.js`; add domain values to `data.js` only when mechanics consume them.
 - Add a regulation by defining its data, generation condition, clue, confirming report evidence, audit description, and class risk weights together.
 - Add a scanner by extending `config.scans`, report generation, UI rendering expectations, and audit mappings.
 - Add a new dossier section only when at least one mechanic asks the player to use it.

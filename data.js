@@ -433,18 +433,6 @@
     ],
     routeEndorsements: ["RTE-INSPECT", "RTE-CIV", "RTE-BONDED", "RTE-RELIEF"],
     containmentCerts: ["CN-HAB", "CN-BIO", "CN-MED", "CN-IND", "CN-RAD", "CN-SEC", "CN-DPL"],
-    pilotNotes: [
-      "Pilot requests priority due to a relay slot closing at 19:40.",
-      "Captain confirms manifest receipt and remains on open carrier.",
-      "Bridge response is delayed by 1.8 seconds after each customs query.",
-      "Pilot reports a recent coolant service at the origin port.",
-      "Cargo clerk reads seal identifiers from a printed worksheet.",
-      "Captain disputes the queue estimate but acknowledges inspection authority.",
-      "Background comms indicate routine watch turnover.",
-      "Crew repeats that route endorsement was issued at departure.",
-      "Pilot says a yard recall notice was closed before launch.",
-      "Manifest officer asks whether habitat containment codes are still required this shift."
-    ],
     postings: [
       {
         id: "j4-freight-annex",

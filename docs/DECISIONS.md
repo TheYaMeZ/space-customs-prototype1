@@ -136,7 +136,7 @@ This file records consequential choices that are easy to accidentally reverse. I
 
 **Why:** The bottom corners need useful presence, and radio traffic strengthens the fantasy of managing a live customs lane without adding another proof system.
 
-**Consequence:** Comms rows may animate transmission timing with `TX` and `RX` pending states, including delayed vessel replies. They must not reveal hidden truth, recommend scanners, provide correctness feedback, or duplicate non-radio departure notices. Ops Log remains the explicit audit and diagnostic channel.
+**Consequence:** Comms rows may animate transmission timing with `TX` and `RX` pending states, including delayed vessel replies. Copy may vary by ship class, cargo, route, operator, scanner, or scripted contact identity. It must not reveal hidden truth, recommend scanners, provide correctness feedback, or duplicate non-radio departure notices. Ops Log remains the explicit audit and diagnostic channel.
 
 ## D-018: The Default Prototype Uses An Authored Posting Campaign
 
