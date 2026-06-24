@@ -47,6 +47,7 @@
     scriptedContactCorrect: false,
     attemptPlan: [],
     nextPlanIndex: 0,
+    emptyLaneShiftEndAt: null,
     lastShiftResult: null,
     rulesPanelMode: "normal",
     collapsed: { systems: false }
@@ -297,6 +298,28 @@
   function accelerateNextSpawn() {
     if (state.campaign.mode !== "campaign" || state.traffic.length || state.nextPlanIndex >= state.attemptPlan.length) return;
     state.nextSpawnAt = Math.max(state.nextSpawnAt, state.timeLeft - config.campaign.emptyLaneSpawnDelay);
+  }
+
+  function isCampaignLaneExhausted() {
+    return state.mode === "active" &&
+      state.campaign.mode === "campaign" &&
+      state.traffic.length === 0 &&
+      state.nextPlanIndex >= state.attemptPlan.length;
+  }
+
+  function updateExhaustedLaneAutoEnd() {
+    if (!isCampaignLaneExhausted()) {
+      state.emptyLaneShiftEndAt = null;
+      return false;
+    }
+    if (state.emptyLaneShiftEndAt === null) {
+      state.emptyLaneShiftEndAt = state.commsClock + config.campaign.emptyLaneShiftEndDelay;
+      addLog(`No further scheduled contacts. Closing shift audit in ${config.campaign.emptyLaneShiftEndDelay} seconds.`);
+      return false;
+    }
+    if (state.commsClock < state.emptyLaneShiftEndAt) return false;
+    finishShift();
+    return true;
   }
 
   function spawnShip() {
@@ -640,6 +663,7 @@
     state.selectedShipId = state.traffic[0]?.id ?? null;
     state.selectedReportId = null;
     accelerateNextSpawn();
+    if (updateExhaustedLaneAutoEnd()) return;
     refresh();
   }
 
@@ -665,6 +689,7 @@
     });
     if (!getShip()) state.selectedShipId = state.traffic[0]?.id ?? null;
     accelerateNextSpawn();
+    updateExhaustedLaneAutoEnd();
   }
 
   function tick() {
@@ -674,8 +699,10 @@
     tickComms();
     tickPowerRecharge();
     handleDepartures();
+    if (state.mode !== "active") return;
     const spawnCutoff = state.campaign.mode === "campaign" ? config.campaign.finalSpawnCutoff : 24;
     if (state.timeLeft > spawnCutoff && state.timeLeft <= state.nextSpawnAt) spawnShip();
+    if (updateExhaustedLaneAutoEnd()) return;
     if (state.timeLeft <= 0) finishShift();
     else refresh();
   }
@@ -747,6 +774,7 @@
       scriptedContactCorrect: false,
       attemptPlan: [],
       nextPlanIndex: 0,
+      emptyLaneShiftEndAt: null,
       lastShiftResult: null,
       rulesPanelMode: "normal"
     });

@@ -18,6 +18,7 @@
       contactCount: [7, 9],
       contactSpawn: [32, 44],
       emptyLaneSpawnDelay: 3,
+      emptyLaneShiftEndDelay: 3,
       qualification: { minimumRulings: 6, qualifiedAccuracy: 0.75, commendedAccuracy: 0.9 },
       shiftProfiles: {
         "freight-certification": {

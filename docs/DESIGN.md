@@ -72,7 +72,7 @@ Contacts remain long enough to read, but unresolved ships eventually leave and c
 8. Clear a ship with no allegations, or detain it with the exact alleged violation set.
 9. Use the Ops Log and end-of-shift audit to understand mistakes, then qualify, retry, or advance to the next authored shift.
 
-The default campaign begins with three six-minute shifts at the J4 Freight Annex. `LIC-01` is the initial dossier-confirmed Standing Order; posting-specific regulations accumulate from `CAR-19` through `LIC-22` and `CAR-27`. Only Hold Tomography is authorized during this posting. A shift requires six rulings, at least 75% accuracy, and a correct ruling on the named Greywake audit shipment. Deficient shifts retry with regenerated traffic.
+The default campaign begins with three six-minute shifts at the J4 Freight Annex. `LIC-01` is the initial dossier-confirmed Standing Order; posting-specific regulations accumulate from `CAR-19` through `LIC-22` and `CAR-27`. Only Hold Tomography is authorized during this posting. A shift requires six rulings, at least 75% accuracy, and a correct ruling on the named Greywake audit shipment. Deficient shifts retry with regenerated traffic. If the finite authored contact plan is exhausted before the timer expires, the lane closes automatically after a short no-further-contacts notice.
 
 Standing Orders and Active Regulations share evidence, allegation, and exact-match detention behavior. Their distinction is campaign context: Standing Orders persist after introduction, while Active Regulations belong to the current authored shift. The hidden `?mode=random` development mode retains the earlier ten-minute random four-rule shift.
 

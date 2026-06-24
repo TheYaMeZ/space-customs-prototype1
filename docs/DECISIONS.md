@@ -160,7 +160,7 @@ This file records consequential choices that are easy to accidentally reverse. I
 
 **Why:** Advancement should require both sound judgment and traffic processing, while a guaranteed authored contact ensures the focal lesson was handled correctly.
 
-**Consequence:** Campaign shifts last six minutes, stop arrivals for the final 90 seconds, and repeat on deficiency. Live status shows rulings and completed-contact accuracy instead of score and misses.
+**Consequence:** Campaign shifts last six minutes, stop arrivals for the final 90 seconds, and repeat on deficiency. If all planned campaign contacts are processed early, the shift closes automatically after a short no-further-contacts notice. Live status shows rulings and completed-contact accuracy instead of score and misses.
 
 ## D-021: Regulations Use A Three-State Reference Panel
 

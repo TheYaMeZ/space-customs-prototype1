@@ -222,6 +222,7 @@ The singleton `SpaceCustoms.engine.state` owns:
 - Active regulation IDs.
 - Active regulation variants.
 - Traffic and selected ship/rule/report IDs.
+- Campaign attempt plan progress and the exhausted-lane auto-end deadline.
 - Ops Log entries, Lane Comms entries, and resolved-contact count.
 - Regulations panel mode (`collapsed`, `normal`, or `expanded`) and independent Active Systems collapse state.
 
@@ -232,6 +233,7 @@ Lane Comms entries are presentation state for non-proof radio transcript flavour
 ## Important Invariants
 
 - In campaign mode, `activeRuleIds` is the union of introduced Standing Orders and the current shift's Active Regulations; random mode selects four distinct rules.
+- Campaign shifts auto-end only after every planned contact slot has spawned and no contacts remain active; random shifts continue to run until the timer ends.
 - Ships may violate only rules in `activeRuleIds`.
 - Every violation has a passive or dossier clue at or above `passiveTagThreshold`.
 - Every scan-confirmed violation appears in the correct confirming report.
