@@ -525,6 +525,7 @@
       .filter((line) => line.label.startsWith("SAMPLE."))
       .map((line) => Number.parseFloat(line.value)) ?? [];
     const details = {
+      "commercial-service-authority": ship.ruleEvidence?.["commercial-service-authority"] ?? `route profile ${dossierValue(ship, "ROUTE PROFILE")}; operator scopes ${dossierValue(ship, "OPERATOR LICENCE")}`,
       "military-registry": `measured hull ${reportValue(ship, "transponder", "MEASURED.HULL")}; endorsement ${reportValue(ship, "transponder", "REGISTRY.ENDORSEMENT")}`,
       "weapon-license": `${unlicensed?.label.split(".")[0]} point-defence licence NONE`,
       "component-recall": `${recalled?.label.split(".")[0]} lot ${recalled?.value}; policy ${ship.ruleEvidence?.["component-recall"] ?? rule.criterion}`,
