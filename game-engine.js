@@ -49,8 +49,51 @@
     nextPlanIndex: 0,
     emptyLaneShiftEndAt: null,
     lastShiftResult: null,
+    onboarding: {
+      enabled: false,
+      currentStepId: null,
+      completedStepIds: []
+    },
     rulesPanelMode: "normal",
     collapsed: { systems: false }
+  };
+
+  const onboardingSteps = {
+    "first-contact": {
+      id: "first-contact",
+      title: "Start with the dossier",
+      body: "Select a ship on the top bar. Assess passive readings, ships will provide mandatory data for review soon after contact."
+    },
+    "packet-received": {
+      id: "packet-received",
+      title: "Compare the dossier fields",
+      body: "LIC-01 is a dossier check. Freight service requires operator licence scope FREIGHT."
+    },
+    "regulations-reference": {
+      id: "regulations-reference",
+      title: "Use the rules as your reference",
+      body: "Rules define the relationship to inspect. Use [>] if you need the full operational reference."
+    },
+    allegation: {
+      id: "allegation",
+      title: "File only supportable allegations",
+      body: "MARK an allegation only when the evidence supports it. You can REMOVE it before ruling."
+    },
+    "ruling-console": {
+      id: "ruling-console",
+      title: "Issue the ruling",
+      body: "CLEAR if no allegations remain. DETAIN only when your marked allegations exactly match the supported violations."
+    },
+    "audit-feedback": {
+      id: "audit-feedback",
+      title: "Read the audit trail",
+      body: "Audit feedback explains supported, missed, or unsupported allegations. This is how the desk teaches you."
+    },
+    "hold-tomography": {
+      id: "hold-tomography",
+      title: "Cargo proof needs Hold Tomography",
+      body: "CAR-19 needs cargo proof. Run Hold Tomography, then compare measured mass and seal count against the declaration."
+    }
   };
 
   function refresh() {
@@ -88,6 +131,86 @@
   function currentTrafficProfile() {
     const shift = currentShiftDefinition();
     return shift ? config.campaign.shiftProfiles[shift.id] : {};
+  }
+
+  function isOnboardingEligible() {
+    return state.campaign.mode === "campaign" &&
+      state.campaign.postingIndex === 0 &&
+      state.campaign.shiftIndex === 0;
+  }
+
+  function onboardingCompleted(stepId) {
+    return state.onboarding.completedStepIds.includes(stepId);
+  }
+
+  function completeOnboardingStep(stepId) {
+    if (!state.onboarding.enabled || !stepId || onboardingCompleted(stepId)) return;
+    state.onboarding.completedStepIds.push(stepId);
+    if (state.onboarding.currentStepId === stepId) state.onboarding.currentStepId = null;
+  }
+
+  function hasReceivedPacket() {
+    return state.traffic.some((ship) => packetReceived(ship));
+  }
+
+  function currentShipCanMarkLic01() {
+    const ship = getShip();
+    return Boolean(ship && packetReceived(ship) && state.activeRuleIds.includes("commercial-service-authority"));
+  }
+
+  function currentShipNeedsCargoTeaching() {
+    const ship = getShip();
+    return Boolean(
+      ship &&
+      packetReceived(ship) &&
+      state.activeRuleIds.includes("manifest-match") &&
+      (ship.actualViolations.includes("manifest-match") || ship.benignHintRuleIds.includes("manifest-match"))
+    );
+  }
+
+  function syncOnboarding() {
+    if (!isOnboardingEligible()) {
+      state.onboarding.enabled = false;
+      state.onboarding.currentStepId = null;
+      return;
+    }
+    state.onboarding.enabled = true;
+    if (state.onboarding.currentStepId) return;
+    if (!onboardingCompleted("first-contact") && state.spawnedContacts > 0) {
+      state.onboarding.currentStepId = "first-contact";
+      return;
+    }
+    if (onboardingCompleted("first-contact") && !onboardingCompleted("packet-received") && hasReceivedPacket()) {
+      state.onboarding.currentStepId = "packet-received";
+      return;
+    }
+    if (onboardingCompleted("packet-received") && !onboardingCompleted("regulations-reference")) {
+      state.onboarding.currentStepId = "regulations-reference";
+      return;
+    }
+    if (onboardingCompleted("regulations-reference") && !onboardingCompleted("allegation") && currentShipCanMarkLic01()) {
+      state.onboarding.currentStepId = "allegation";
+      return;
+    }
+    if (onboardingCompleted("allegation") && !onboardingCompleted("ruling-console") && getShip()?.allegedViolationIds.length) {
+      state.onboarding.currentStepId = "ruling-console";
+      return;
+    }
+    if (onboardingCompleted("audit-feedback") && !onboardingCompleted("hold-tomography") && currentShipNeedsCargoTeaching()) {
+      state.onboarding.currentStepId = "hold-tomography";
+    }
+  }
+
+  function currentOnboardingStep() {
+    if (!state.onboarding.enabled || !state.onboarding.currentStepId) return null;
+    return onboardingSteps[state.onboarding.currentStepId] ?? null;
+  }
+
+  function acknowledgeOnboardingStep() {
+    const stepId = state.onboarding.currentStepId;
+    completeOnboardingStep(stepId);
+    syncOnboarding();
+    refresh();
   }
 
   function isScanAuthorized(scanId) {
@@ -179,6 +302,7 @@
     if (!ship || ship.packetStatus === "received") return;
     ship.packetStatus = "received";
     addLog(`${ship.name}: declaration packet received.`);
+    syncOnboarding();
   }
 
   function insertComms(entry) {
@@ -294,6 +418,7 @@
       onComplete: { type: "packet-received", shipId: ship.id }
     });
     scheduleNextSpawn();
+    syncOnboarding();
     refresh();
   }
 
@@ -461,7 +586,12 @@
     } else {
       ship.allegedViolationIds.push(rule.id);
       addLog(`${ship.name}: ${rule.code} marked as alleged.`);
+      if (rule.id === "commercial-service-authority") {
+        completeOnboardingStep("allegation");
+        state.onboarding.currentStepId = "ruling-console";
+      }
     }
+    syncOnboarding();
     refresh();
   }
 
@@ -593,6 +723,11 @@
       state.scriptedContactCorrect = correct;
     }
 
+    completeOnboardingStep("ruling-console");
+    if (state.onboarding.enabled && !onboardingCompleted("audit-feedback")) {
+      state.onboarding.currentStepId = "audit-feedback";
+    }
+
     state.traffic = state.traffic.filter((item) => item.id !== ship.id);
     state.selectedShipId = state.traffic[0]?.id ?? null;
     state.selectedReportId = null;
@@ -710,6 +845,11 @@
       nextPlanIndex: 0,
       emptyLaneShiftEndAt: null,
       lastShiftResult: null,
+      onboarding: {
+        enabled: false,
+        currentStepId: null,
+        completedStepIds: []
+      },
       rulesPanelMode: "normal"
     });
   }
@@ -726,6 +866,11 @@
     state.ruleVariants = generator.selectRuleVariants(state.activeRuleIds);
     state.attemptPlan = generator.createAttemptPlan(shift, currentTrafficProfile());
     state.plannedContacts = state.attemptPlan.length;
+    state.onboarding = {
+      enabled: isOnboardingEligible(),
+      currentStepId: null,
+      completedStepIds: []
+    };
     addLog(`J4 Freight Annex / ${shift.title}. Awaiting shift authority.`);
     if (showBriefing) namespace.ui?.showBriefing();
     refresh();
@@ -846,6 +991,7 @@
     activeRegulations,
     currentPosting,
     currentShiftDefinition,
+    currentOnboardingStep,
     currentAccuracy,
     isScanAuthorized,
     isAiValidationAuthorized,
@@ -870,6 +1016,7 @@
     retryShift,
     advanceShift,
     continueFromOverlay,
+    acknowledgeOnboardingStep,
     reset: initializeCampaign,
     evaluateAiValidation
   };

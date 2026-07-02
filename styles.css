@@ -1460,6 +1460,76 @@ h3,
   margin-top: 7px;
 }
 
+.onboarding-callout {
+  position: fixed;
+  z-index: 45;
+  right: max(18px, calc((100vw - min(1560px, calc(100vw - 18px))) / 2 + 18px));
+  bottom: 18px;
+  width: min(390px, calc(100vw - 36px));
+  padding: 12px 13px 13px;
+  border: 2px solid #8e7448;
+  outline: 1px solid #d8ba73;
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.025) 0 2px, transparent 2px 7px),
+    #172015;
+  color: var(--phosphor);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.66), inset 0 0 18px rgba(225, 180, 95, 0.12);
+}
+
+.onboarding-callout h3 {
+  margin: 5px 0 7px;
+  color: var(--amber);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
+.onboarding-callout p:not(.eyebrow) {
+  color: #b6caaa;
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+
+.onboarding-callout .clear-button {
+  margin-top: 10px;
+  min-width: 92px;
+}
+
+.has-onboarding-callout .is-onboarding-muted {
+  opacity: 0.46;
+  filter: saturate(0.74);
+  transition: opacity 160ms ease, filter 160ms ease;
+}
+
+.is-onboarding-highlight {
+  position: relative;
+  z-index: 4;
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px rgba(225, 180, 95, 0.2), 0 0 18px rgba(225, 180, 95, 0.38), inset 0 0 16px rgba(225, 180, 95, 0.12);
+  animation: onboarding-highlight-pulse 1.4s steps(2, end) infinite;
+}
+
+.form-row.is-onboarding-highlight,
+.passive-reading.is-onboarding-highlight {
+  background: #2c291d;
+}
+
+.rule-mark.is-onboarding-highlight,
+.scan-button.is-onboarding-highlight,
+.panel-toggle.is-onboarding-highlight {
+  border-color: var(--amber);
+}
+
+@keyframes onboarding-highlight-pulse {
+  0%,
+  100% {
+    outline-color: var(--amber);
+  }
+  50% {
+    outline-color: var(--phosphor);
+  }
+}
+
 @media (max-width: 1080px) {
   body {
     overflow-y: auto;

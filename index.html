@@ -30,7 +30,7 @@
     </header>
 
     <main id="workspace" class="workspace">
-      <aside id="rules-panel" class="panel side-panel rules-panel">
+      <aside id="rules-panel" class="panel side-panel rules-panel" data-onboarding-target="regulations">
         <div class="panel-header">
           <div><span class="panel-code">REF</span><h2>Regulations</h2></div>
           <div class="panel-controls rules-panel-controls" role="group" aria-label="Regulations panel size">
@@ -40,7 +40,7 @@
         </div>
         <div class="panel-body">
           <div id="rules-list" class="rule-list"></div>
-          <div class="ruling-console">
+          <div class="ruling-console" data-onboarding-target="ruling-console">
             <div class="selection-line">
               <span>ALLEGED</span>
               <div id="allegation-list" class="allegation-list"></div>
@@ -53,7 +53,7 @@
         </div>
       </aside>
 
-      <section class="panel dossier-panel">
+      <section class="panel dossier-panel" data-onboarding-target="dossier">
         <div class="panel-header">
           <div><span class="panel-code">DOS</span><h2>Contact Dossier</h2></div>
           <span id="traffic-load" class="panel-indicator">0 CONTACTS</span>
@@ -76,7 +76,7 @@
         </div>
       </section>
 
-      <aside id="systems-panel" class="panel side-panel systems-panel">
+      <aside id="systems-panel" class="panel side-panel systems-panel" data-onboarding-target="systems">
         <div class="panel-header">
           <div><span class="panel-code">SYS</span><h2>Active Systems</h2></div>
           <button class="panel-toggle" data-panel="systems" aria-label="Collapse active systems">[&gt;]</button>
@@ -87,7 +87,7 @@
       </aside>
 
       <section class="bottom-dock">
-        <section class="ops-log telemetry-panel">
+        <section class="ops-log telemetry-panel" data-onboarding-target="ops-log">
           <div class="ops-log-header">
             <div><span class="panel-code">LOG</span><h3>Ops Log</h3></div>
             <span id="log-count">0 ENTRIES</span>
@@ -95,7 +95,7 @@
           <div id="log-list" class="log-list"></div>
         </section>
 
-        <section class="comms-log telemetry-panel">
+        <section class="comms-log telemetry-panel" data-onboarding-target="comms">
           <div class="ops-log-header">
             <div><span class="panel-code">COM</span><h3>Lane Comms</h3></div>
             <span id="comms-count">0 ENTRIES</span>
@@ -116,6 +116,13 @@
       <button id="overlay-restart" class="clear-button hidden">RUN ANOTHER SHIFT</button>
     </div>
   </div>
+
+  <aside id="onboarding-callout" class="onboarding-callout hidden" aria-live="polite">
+    <p class="eyebrow">Supervisor</p>
+    <h3 id="onboarding-title">Supervised Qualification</h3>
+    <p id="onboarding-body"></p>
+    <button id="onboarding-action" class="clear-button">GOT IT</button>
+  </aside>
 
   <script src="data.js"></script>
   <script src="flavour-data.js"></script>

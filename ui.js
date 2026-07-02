@@ -33,7 +33,11 @@
     overlaySummary: document.querySelector("#overlay-summary"),
     overlayRules: document.querySelector("#overlay-rules"),
     overlayAction: document.querySelector("#overlay-action"),
-    overlayRestart: document.querySelector("#overlay-restart")
+    overlayRestart: document.querySelector("#overlay-restart"),
+    onboardingCallout: document.querySelector("#onboarding-callout"),
+    onboardingTitle: document.querySelector("#onboarding-title"),
+    onboardingBody: document.querySelector("#onboarding-body"),
+    onboardingAction: document.querySelector("#onboarding-action")
   };
 
   function isAiTraced(ship, item) {
@@ -47,7 +51,7 @@
 
   function formRow(ship, item) {
     return `
-      <div class="form-row evidence-row ${isAiTraced(ship, item) ? "is-ai-traced" : ""}">
+      <div class="form-row evidence-row ${isAiTraced(ship, item) ? "is-ai-traced" : ""}" data-field-key="${item.key}">
         <span>${item.label}</span>
         <strong>${item.value}</strong>
         <i class="ai-trace-mark ${isAiTraced(ship, item) ? "is-visible" : ""}" aria-hidden="true">AI TRACE</i>
@@ -84,7 +88,7 @@
         ? `<span>DOSSIER COMPARISON</span> ${fieldList(reference.dossierFields)}`
         : `<span>${engine.scanConfig(rule.confirmingScan).label}</span>${reference.reportFields.length ? ` ${fieldList(reference.reportFields)}` : ""}`;
       return `
-        <article class="rule-reference-card ${selected ? "is-selected" : ""} ${alleged ? "is-alleged" : ""}">
+        <article class="rule-reference-card ${selected ? "is-selected" : ""} ${alleged ? "is-alleged" : ""}" data-rule-id="${rule.id}">
           <header>
             <button class="rule-reference-heading" data-rule="${rule.id}">
               <small>${category}</small>
@@ -110,7 +114,7 @@
         ? "Evidence: DOSSIER"
         : `Confirm: ${engine.scanConfig(rule.confirmingScan).label}`;
       return `
-        <div class="rule-row ${selected ? "is-selected" : ""} ${alleged ? "is-alleged" : ""}">
+        <div class="rule-row ${selected ? "is-selected" : ""} ${alleged ? "is-alleged" : ""}" data-rule-id="${rule.id}">
           <button class="rule-select" data-rule="${rule.id}">
             <div class="rule-select-top">
               <span>${rule.code}</span>
@@ -130,7 +134,7 @@
       const alleged = ship?.allegedViolationIds.includes(rule.id);
       const canMark = engine.hasConfirmingReport(ship, rule.id);
       return `
-        <div class="standing-order-row ${alleged ? "is-alleged" : ""}">
+        <div class="standing-order-row ${alleged ? "is-alleged" : ""}" data-rule-id="${rule.id}">
           <b>${rule.code}</b>
           <span>${rule.shortCriterion ?? rule.criterion}</span>
           <button class="rule-mark standing-order-mark" data-allegation-rule="${rule.id}" ${canMark ? "" : "disabled"}>${alleged ? "REMOVE" : "MARK"}</button>
@@ -297,7 +301,7 @@
     const passiveSection = dossierSection(ship, "passive", "00 / PASSIVE SURVEY", `
         <div class="passive-grid">
           ${ship.passiveSurvey.map((item) => `
-            <div class="passive-reading ${isAiTraced(ship, item) ? "is-ai-traced" : ""}">
+            <div class="passive-reading ${isAiTraced(ship, item) ? "is-ai-traced" : ""}" data-field-key="${item.key}">
               <span>${item.label}</span>
               <strong>${item.value}</strong>
               ${anomalyTag(item)}
@@ -473,6 +477,50 @@
     document.querySelector('[data-panel="systems"]').textContent = state.collapsed.systems ? "[<]" : "[>]";
   }
 
+  const onboardingTargets = {
+    "first-contact": ['[data-onboarding-target="dossier"]'],
+    "packet-received": ['[data-field-key="route.profile"]', '[data-field-key="declaration.operatorLicence"]'],
+    "regulations-reference": ['[data-onboarding-target="regulations"]', '[data-rules-step="1"]', '[data-rule-id="commercial-service-authority"]'],
+    allegation: ['[data-allegation-rule="commercial-service-authority"]'],
+    "ruling-console": ['[data-onboarding-target="ruling-console"]'],
+    "audit-feedback": ['[data-onboarding-target="ops-log"]'],
+    "hold-tomography": ['[data-onboarding-target="systems"]', '[data-scan="cargo"]']
+  };
+
+  function clearOnboardingPresentation() {
+    document.querySelectorAll(".is-onboarding-highlight, .is-onboarding-muted").forEach((element) => {
+      element.classList.remove("is-onboarding-highlight", "is-onboarding-muted");
+    });
+    els.workspace.classList.remove("has-onboarding-callout");
+  }
+
+  function renderOnboarding() {
+    clearOnboardingPresentation();
+    const step = engine.currentOnboardingStep();
+    if (!step) {
+      els.onboardingCallout.classList.add("hidden");
+      return;
+    }
+
+    els.workspace.classList.add("has-onboarding-callout");
+    els.onboardingCallout.classList.remove("hidden");
+    els.onboardingTitle.textContent = step.title;
+    els.onboardingBody.textContent = step.body;
+
+    const highlighted = new Set();
+    (onboardingTargets[step.id] ?? []).forEach((selector) => {
+      document.querySelectorAll(selector).forEach((element) => {
+        element.classList.add("is-onboarding-highlight");
+        highlighted.add(element);
+      });
+    });
+
+    document.querySelectorAll("[data-onboarding-target]").forEach((element) => {
+      const containsHighlight = [...highlighted].some((target) => element === target || element.contains(target));
+      if (!containsHighlight) element.classList.add("is-onboarding-muted");
+    });
+  }
+
   function render() {
     renderStatus();
     renderRules();
@@ -482,6 +530,7 @@
     renderLog();
     renderComms();
     renderPanels();
+    renderOnboarding();
   }
 
   function hideOverlay() {
@@ -490,11 +539,15 @@
 
   function showBriefing() {
     const shift = engine.currentShiftDefinition();
+    const supervised = engine.state.onboarding.enabled;
     els.overlay.classList.remove("hidden");
-    els.overlayEyebrow.textContent = engine.state.campaign.mode === "campaign" ? "J4 FREIGHT ANNEX / PRE-SHIFT" : "PRE-SHIFT BRIEFING";
+    els.overlayEyebrow.textContent = supervised ? "J4 FREIGHT ANNEX / SUPERVISED QUALIFICATION" : engine.state.campaign.mode === "campaign" ? "J4 FREIGHT ANNEX / PRE-SHIFT" : "PRE-SHIFT BRIEFING";
     els.overlayTitle.textContent = shift?.title ?? "OBSERVE. FORM A SUSPICION. ACQUIRE PROOF.";
-    els.overlaySummary.textContent = shift?.briefing ??
+    const summary = shift?.briefing ??
       `${config.activeRuleCount} regulations are active. Vessel class, passive readings, and paperwork can suggest where closer inspection may pay off. A cue is not proof.`;
+    els.overlaySummary.textContent = supervised
+      ? `${summary} You are qualifying at the J4 Freight Annex. Start each contact by reading the dossier, compare it against the active rules, scan only when proof requires it, then CLEAR or DETAIN.`
+      : summary;
     const standingItems = engine.standingOrders().map((rule) => `<li><strong>STANDING / ${rule.code}</strong> ${rule.criterion}</li>`);
     const regulationItems = engine.activeRegulations().map((rule) => `
       <li><strong>ACTIVE / ${rule.code}</strong> ${rule.criterion}<br>${rule.evidenceType === "dossier" ? "Evidence in dossier." : `Confirm with ${engine.scanConfig(rule.confirmingScan).label}.`}</li>
@@ -503,7 +556,7 @@
       ? [`<li><strong>QUALIFICATION</strong> Issue at least ${config.campaign.qualification.minimumRulings} rulings, maintain ${Math.round(config.campaign.qualification.qualifiedAccuracy * 100)}% accuracy, and rule correctly on the Greywake audit shipment.</li>`, `<li><strong>AUTHORIZED</strong> HOLD TOMOGRAPHY only. Other systems remain locked.</li>`]
       : [];
     els.overlayRules.innerHTML = [...standingItems, ...regulationItems, ...qualification].join("");
-    els.overlayAction.textContent = "BEGIN SHIFT";
+    els.overlayAction.textContent = supervised ? "BEGIN SUPERVISED SHIFT" : "BEGIN SHIFT";
     els.overlayAction.classList.remove("hidden");
     els.overlayRestart.classList.add("hidden");
   }
@@ -577,6 +630,7 @@
     els.detainShip.addEventListener("click", () => engine.resolveShip("detain"));
     els.overlayAction.addEventListener("click", engine.continueFromOverlay);
     els.overlayRestart.addEventListener("click", engine.continueFromOverlay);
+    els.onboardingAction.addEventListener("click", engine.acknowledgeOnboardingStep);
   }
 
   namespace.ui = {

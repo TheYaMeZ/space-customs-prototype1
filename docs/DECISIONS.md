@@ -169,3 +169,11 @@ This file records consequential choices that are easy to accidentally reverse. I
 **Why:** Compact Standing Orders are useful during routine inspection but do not provide enough detail when the player needs to recover an exact evidence relationship. A spatial expansion keeps that reference beside the dossier without adding truth-sensitive hints or a separate modal workflow.
 
 **Consequence:** Rule definitions carry applicability and exact dossier, passive, and report field labels. Expanded cards show those labels and the configured confirming scanner, never current ship truth. Stacked layouts keep full-width Systems controls, manual Systems collapse remains independent, and every shift attempt resets Regulations to normal.
+
+## D-022: First Shift Uses Supervised Qualification Callouts
+
+**Decision:** Teach the workstation through temporary, in-world supervisor callouts and highlights during the first J4 Freight Annex shift rather than a separate tutorial mode or permanent help panel.
+
+**Why:** First-time players need relief from the dense information layout, but the prototype should still feel like playing the actual inspection desk.
+
+**Consequence:** Onboarding is session-only, shift-specific, and non-blocking. It may highlight existing panels, fields, and controls, but it must not alter evidence availability, issue verdicts, recommend hidden-truth actions, or add another persistent management surface.

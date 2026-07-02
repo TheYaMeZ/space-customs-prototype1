@@ -77,6 +77,7 @@ Hidden anomaly metadata is generated here but is not ordinarily rendered as a sc
 Authoritative mutable game state and gameplay transitions:
 
 - Campaign, shift-attempt, spawning, departure, qualification, retry, and advancement lifecycles.
+- Shift 1 supervised onboarding step state and trigger progression.
 - Scanner activation and completion.
 - Power regeneration.
 - AI Validation activation and re-evaluation.
@@ -96,6 +97,7 @@ DOM lookup, rendering, CSS-state application, and event binding:
 - Persistent active-system returns in the Contact Dossier.
 - Ops Log, Lane Comms, and briefing/report overlays.
 - Collapsible side panels.
+- Supervised onboarding callouts and temporary focus highlights.
 
 The UI may derive presentation state from the engine. It must not inspect hidden truth to enable controls or reveal verdicts.
 
@@ -237,9 +239,12 @@ The singleton `SpaceCustoms.engine.state` owns:
 - Traffic and selected ship/rule/report IDs.
 - Campaign attempt plan progress and the exhausted-lane auto-end deadline.
 - Ops Log entries, Lane Comms entries, and resolved-contact count.
+- Session-only supervised onboarding state for the first campaign shift.
 - Regulations panel mode (`collapsed`, `normal`, or `expanded`) and independent Active Systems collapse state.
 
 Ship-specific scan, allegation, and AI Validation state remains on each generated ship. The Regulations panel owns the always-visible ruling controls, while the Active Systems panel owns scan and AI Validation actions. Expanded Regulations cards are derived only from rule definitions and campaign category context. Attempt preparation resets Regulations to normal; panel mode never changes evidence or action availability.
+
+Supervised onboarding is session-only and limited to the first campaign shift. The engine owns the active step and completion list; the UI renders one non-blocking supervisor callout plus temporary highlights on existing panels, controls, and dossier rows. Dossier rows expose stable `data-field-key` attributes so onboarding can point to fields without inspecting generated truth.
 
 Lane Comms entries are presentation state for non-proof radio transcript flavour. A scheduled entry can be inserted after a short delay, then reserves its row with a temporary `TX` or `RX` carrier label in the message area before revealing its transcript. Initial ship replies mark the declaration packet as received; Comms copy is selected from `flavour-data.js` using ship presentation context and must not determine correctness, evidence availability, or action gating.
 
