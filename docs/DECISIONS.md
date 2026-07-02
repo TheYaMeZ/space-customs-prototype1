@@ -176,4 +176,4 @@ This file records consequential choices that are easy to accidentally reverse. I
 
 **Why:** First-time players need relief from the dense information layout, but the prototype should still feel like playing the actual inspection desk.
 
-**Consequence:** Onboarding is session-only, shift-specific, non-blocking, and bypassable with `?skip-tutorial=true`. It may highlight existing panels, fields, and controls, but it must not alter evidence availability, issue verdicts, recommend hidden-truth actions, or add another persistent management surface.
+**Consequence:** Onboarding is session-only, shift-specific, non-blocking, and bypassable with `?skip-tutorial=true`. It may highlight existing panels, fields, scanners, MARK buttons, and ruling controls, but it must not alter evidence availability, issue verdicts, recommend hidden-truth actions, or add another persistent management surface.

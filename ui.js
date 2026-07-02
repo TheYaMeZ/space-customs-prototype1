@@ -484,7 +484,9 @@
     allegation: ['[data-allegation-rule="commercial-service-authority"]'],
     "ruling-console": ['[data-onboarding-target="ruling-console"]'],
     "audit-feedback": ['[data-onboarding-target="ops-log"]'],
-    "hold-tomography": ['[data-onboarding-target="systems"]', '[data-scan="cargo"]']
+    "hold-tomography": ['[data-onboarding-target="systems"]', '[data-scan="cargo"]'],
+    "cargo-mark": ['[data-allegation-rule="manifest-match"]'],
+    "cargo-detain": ['[data-onboarding-target="ruling-console"]', '[data-onboarding-target="detain"]']
   };
 
   function clearOnboardingPresentation() {
@@ -630,7 +632,11 @@
     els.detainShip.addEventListener("click", () => engine.resolveShip("detain"));
     els.overlayAction.addEventListener("click", engine.continueFromOverlay);
     els.overlayRestart.addEventListener("click", engine.continueFromOverlay);
-    els.onboardingAction.addEventListener("click", engine.acknowledgeOnboardingStep);
+    els.onboardingAction.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      engine.acknowledgeOnboardingStep();
+    });
   }
 
   namespace.ui = {

@@ -94,6 +94,16 @@
       id: "hold-tomography",
       title: "Cargo proof needs Hold Tomography",
       body: "CAR-19 needs cargo proof. Run Hold Tomography, then compare measured mass and seal count against the declaration."
+    },
+    "cargo-mark": {
+      id: "cargo-mark",
+      title: "Mark the cargo allegation",
+      body: "Hold Tomography has returned. If the cargo evidence supports CAR-19, MARK Cargo declaration accuracy before ruling."
+    },
+    "cargo-detain": {
+      id: "cargo-detain",
+      title: "Detain with the marked allegation",
+      body: "Once CAR-19 is marked, DETAIN submits that allegation set for audit. Extra or missing allegations will fail the ruling."
     }
   };
 
@@ -146,8 +156,8 @@
   }
 
   function completeOnboardingStep(stepId) {
-    if (!state.onboarding.enabled || !stepId || onboardingCompleted(stepId)) return;
-    state.onboarding.completedStepIds.push(stepId);
+    if (!state.onboarding.enabled || !stepId) return;
+    if (!onboardingCompleted(stepId)) state.onboarding.completedStepIds.push(stepId);
     if (state.onboarding.currentStepId === stepId) state.onboarding.currentStepId = null;
   }
 
@@ -167,6 +177,14 @@
       packetReceived(ship) &&
       state.activeRuleIds.includes("manifest-match") &&
       (ship.actualViolations.includes("manifest-match") || ship.benignHintRuleIds.includes("manifest-match"))
+    );
+  }
+
+  function currentShipHasCargoReportTeaching() {
+    const ship = getShip();
+    return Boolean(
+      currentShipNeedsCargoTeaching() &&
+      ship.reports.some((report) => report.action === "cargo" && report.discovered)
     );
   }
 
@@ -200,6 +218,14 @@
     }
     if (onboardingCompleted("audit-feedback") && !onboardingCompleted("hold-tomography") && currentShipNeedsCargoTeaching()) {
       state.onboarding.currentStepId = "hold-tomography";
+      return;
+    }
+    if (onboardingCompleted("hold-tomography") && !onboardingCompleted("cargo-mark") && currentShipHasCargoReportTeaching()) {
+      state.onboarding.currentStepId = "cargo-mark";
+      return;
+    }
+    if (onboardingCompleted("cargo-mark") && !onboardingCompleted("cargo-detain") && getShip()?.allegedViolationIds.includes("manifest-match")) {
+      state.onboarding.currentStepId = "cargo-detain";
     }
   }
 
@@ -211,6 +237,7 @@
   function acknowledgeOnboardingStep() {
     const stepId = state.onboarding.currentStepId;
     completeOnboardingStep(stepId);
+    if (state.onboarding.currentStepId === stepId) state.onboarding.currentStepId = null;
     syncOnboarding();
     refresh();
   }
@@ -453,6 +480,9 @@
     state.powerSpent += scan.cost;
     state.scansUsed[scanId] = (state.scansUsed[scanId] ?? 0) + 1;
     ship.scansRunning[scanId] = scan.duration;
+    if (scanId === "cargo" && state.onboarding.currentStepId === "hold-tomography") {
+      completeOnboardingStep("hold-tomography");
+    }
     addLog(`${scan.label} committed to ${ship.name}; ${scan.cost} power debited.`);
     addComms({
       direction: "tx",
@@ -537,6 +567,7 @@
           speaker: ship.name,
           message: shipComms("scanReturn", ship, scanConfig(scanId))
         });
+        if (scanId === "cargo" && state.selectedShipId === ship.id) syncOnboarding();
         if (ship.aiValidationActive) addLog(`${ship.name}: AI re-analysis: ${ship.aiValidationMessage}.`);
       }
     });
@@ -591,6 +622,10 @@
       if (rule.id === "commercial-service-authority") {
         completeOnboardingStep("allegation");
         state.onboarding.currentStepId = "ruling-console";
+      }
+      if (rule.id === "manifest-match") {
+        completeOnboardingStep("cargo-mark");
+        state.onboarding.currentStepId = "cargo-detain";
       }
     }
     syncOnboarding();
@@ -726,6 +761,7 @@
     }
 
     completeOnboardingStep("ruling-console");
+    completeOnboardingStep("cargo-detain");
     if (state.onboarding.enabled && !onboardingCompleted("audit-feedback")) {
       state.onboarding.currentStepId = "audit-feedback";
     }
