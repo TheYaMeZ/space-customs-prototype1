@@ -49,6 +49,7 @@
     nextPlanIndex: 0,
     emptyLaneShiftEndAt: null,
     lastShiftResult: null,
+    skipTutorial: false,
     onboarding: {
       enabled: false,
       currentStepId: null,
@@ -62,7 +63,7 @@
     "first-contact": {
       id: "first-contact",
       title: "Start with the dossier",
-      body: "Select a ship on the top bar. Assess passive readings, ships will provide mandatory data for review soon after contact."
+      body: "Select a ship on the top bar to set is the active ship. It will show passive survey results which can hint at potential issues. The Dossier contains ship data that will need to be verified."
     },
     "packet-received": {
       id: "packet-received",
@@ -72,7 +73,7 @@
     "regulations-reference": {
       id: "regulations-reference",
       title: "Use the rules as your reference",
-      body: "Rules define the relationship to inspect. Use [>] if you need the full operational reference."
+      body: "Rules define the data/fields/relationships to inspect. Use [>] if you need the full operational reference."
     },
     allegation: {
       id: "allegation",
@@ -134,7 +135,8 @@
   }
 
   function isOnboardingEligible() {
-    return state.campaign.mode === "campaign" &&
+    return !state.skipTutorial &&
+      state.campaign.mode === "campaign" &&
       state.campaign.postingIndex === 0 &&
       state.campaign.shiftIndex === 0;
   }
@@ -876,7 +878,8 @@
     refresh();
   }
 
-  function initializeCampaign() {
+  function initializeCampaign(options = {}) {
+    state.skipTutorial = Boolean(options.skipTutorial ?? state.skipTutorial);
     state.campaign = {
       mode: "campaign",
       postingIndex: 0,

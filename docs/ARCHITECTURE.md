@@ -107,6 +107,7 @@ Minimal bootstrap:
 
 - Bind events.
 - Initialize the authored campaign, or random development mode when `?mode=random` is present.
+- Pass `?skip-tutorial=true` into campaign initialization to disable first-shift supervised onboarding for the session.
 - Run generator validation in the development console.
 - Start the one-second engine tick.
 
@@ -244,7 +245,7 @@ The singleton `SpaceCustoms.engine.state` owns:
 
 Ship-specific scan, allegation, and AI Validation state remains on each generated ship. The Regulations panel owns the always-visible ruling controls, while the Active Systems panel owns scan and AI Validation actions. Expanded Regulations cards are derived only from rule definitions and campaign category context. Attempt preparation resets Regulations to normal; panel mode never changes evidence or action availability.
 
-Supervised onboarding is session-only and limited to the first campaign shift. The engine owns the active step and completion list; the UI renders one non-blocking supervisor callout plus temporary highlights on existing panels, controls, and dossier rows. Dossier rows expose stable `data-field-key` attributes so onboarding can point to fields without inspecting generated truth.
+Supervised onboarding is session-only and limited to the first campaign shift unless the app bootstrap passes `skipTutorial` from `?skip-tutorial=true`. The engine owns the active step and completion list; the UI renders one non-blocking supervisor callout plus temporary highlights on existing panels, controls, and dossier rows. Dossier rows expose stable `data-field-key` attributes so onboarding can point to fields without inspecting generated truth.
 
 Lane Comms entries are presentation state for non-proof radio transcript flavour. A scheduled entry can be inserted after a short delay, then reserves its row with a temporary `TX` or `RX` carrier label in the message area before revealing its transcript. Initial ship replies mark the declaration packet as received; Comms copy is selected from `flavour-data.js` using ship presentation context and must not determine correctness, evidence availability, or action gating.
 
